@@ -1,0 +1,10 @@
+{
+    "id": "task-mind",
+    "name": "Task Mind",
+    "version": "1.0.0",
+    "minAppVersion": "0.15.0",
+    "description": "Generate intelligent TODOs from your notes using Claude",
+    "author": "Radek",
+    "isDesktopOnly": false
+}
+

@@ -1,0 +1,54 @@
+# Dependency directories
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+*.bundle.*
+
+# Development environment
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Testing
+coverage/
+.nyc_output/
+*.err
+
+# Environment variables and secrets
+.env
+.env.*
+*.secret
+
+# Obsidian workspace files
+.obsidian/
+data.json
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Optional npm cache & history
+.npm/
+.node_repl_history
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Personal notes and documentation drafts
+notes/
+docs-dev/
