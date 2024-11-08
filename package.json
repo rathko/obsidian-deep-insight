@@ -1,7 +1,7 @@
 {
-    "name": "task-mind",
-    "version": "1.0.0",
-    "description": "Generate intelligent TODOs from your notes using Claude",
+    "name": "deep-insight-ai",
+    "version": "1.0.1",
+    "description": "Generate insights from your Obsidian notes using AI",
     "main": "main.js",
     "scripts": {
         "dev": "node esbuild.config.mjs",

@@ -21,7 +21,7 @@ A powerful Obsidian plugin that leverages Claude AI to analyze all your notes an
 
 ## Configuration
 
-1. Get your API key from [Anthropic](https://www.anthropic.com/)
+1. Get your API key from [Anthropic](https://console.anthropic.com/settings/keys)
 2. Open plugin settings in Obsidian
 3. Enter your Anthropic API key
 4. Configure optional settings:
@@ -56,6 +56,7 @@ You can create custom prompt notes in your vault:
 
 - **Claude 3.5 Sonnet**: Recommended for detailed analysis and complex task extraction
 - **Claude 3.5 Haiku**: Best for quick task generation and smaller note sets
+- **OpenAI models**: In development
 
 ## Contributing
 
@@ -89,6 +90,22 @@ A: The plugin processes notes in chunks to:
 
 ### Q: Can I use this with other AI models?
 A: Currently, the plugin supports Claude 3.5 models only.
+
+## Local development
+
+1. Checkout the repo into the Obsidian plugins folder
+2. Build the plugin
+```
+# Install nvm
+nvm use
+# Or make sure you do have node v16.19.1
+npm install
+npm run build
+```
+3. Go to "Community Plugins" and enable "Community Plugins"
+4. Enable "Deep Insight AI"
+5. Click "Configure" icon, provide your Anthropic API key
+
 
 ## Credits
 

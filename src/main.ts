@@ -4,7 +4,7 @@ type InsertPosition = 'top' | 'bottom' | 'cursor';
 type PromptType = 'system' | 'user';
 type AnthropicModel = 'claude-3-5-sonnet-latest' | 'claude-3-5-haiku-latest';
 
-interface TaskMindSettings {
+interface DeepInsightAISettings {
     apiKey: string;
     model: AnthropicModel;
     systemPromptPath: string;
@@ -19,7 +19,7 @@ interface TaskMindSettings {
     offlineModeEnabled: boolean;
 }
 
-const DEFAULT_SETTINGS: TaskMindSettings = {
+const DEFAULT_SETTINGS: DeepInsightAISettings = {
     apiKey: '',
     model: 'claude-3-5-sonnet-latest',
     systemPromptPath: '',
@@ -58,14 +58,14 @@ interface AnthropicResponse {
     error?: AnthropicError;
 }
 
-class TaskMindError extends Error {
+class DeepInsightAIError extends Error {
     constructor(
         message: string,
         public type: 'API' | 'File' | 'Settings' | 'Processing' | 'Network',
         public originalError?: Error
     ) {
         super(message);
-        this.name = 'TaskMindError';
+        this.name = 'DeepInsightAIError';
     }
 }
 
@@ -75,7 +75,6 @@ class NetworkStatusChecker {
     private listeners: Set<(online: boolean) => void> = new Set();
 
     private constructor() {
-        // Use browser's built-in online/offline events
         window.addEventListener('online', () => this.updateOnlineStatus(true));
         window.addEventListener('offline', () => this.updateOnlineStatus(false));
     }
@@ -100,7 +99,6 @@ class NetworkStatusChecker {
 
     addListener(listener: (online: boolean) => void): void {
         this.listeners.add(listener);
-        // Immediately notify the new listener of current status
         listener(this.isOnline);
     }
 
@@ -128,7 +126,7 @@ class ConfirmationModal extends Modal {
         contentEl.createEl('h2', { text: this.title });
         contentEl.createEl('p', { text: this.message });
 
-        const buttonContainer = contentEl.createDiv({ cls: 'task-mind-button-container' });
+        const buttonContainer = contentEl.createDiv({ cls: 'deep-insight-ai-button-container' });
 
         buttonContainer.createEl('button', { text: 'Confirm' })
             .addEventListener('click', () => {
@@ -160,12 +158,12 @@ class PromptTypeModal extends SuggestModal<PromptType> {
 
     renderSuggestion(value: PromptType, el: HTMLElement): void {
         el.createEl('div', { 
-            cls: 'task-mind-suggestion',
+            cls: 'deep-insight-ai-suggestion',
             text: `Set as ${value} prompt` 
         });
 
         el.createEl('small', { 
-            cls: 'task-mind-suggestion-desc',
+            cls: 'deep-insight-ai-suggestion-desc',
             text: value === 'system' 
                 ? 'Define how the AI should process notes' 
                 : 'Define what specific tasks to generate'
@@ -180,7 +178,7 @@ class PromptTypeModal extends SuggestModal<PromptType> {
 class PromptNotesModal extends SuggestModal<TFile> {
     constructor(
         app: App,
-        private plugin: TaskMind,
+        private plugin: DeepInsightAI,
         private onError: (error: Error) => void
     ) {
         super(app);
@@ -193,13 +191,13 @@ class PromptNotesModal extends SuggestModal<TFile> {
     }
 
     renderSuggestion(file: TFile, el: HTMLElement): void {
-        const container = el.createDiv({ cls: 'task-mind-file-suggestion' });
+        const container = el.createDiv({ cls: 'deep-insight-ai-file-suggestion' });
         container.createEl('div', { 
-            cls: 'task-mind-file-name',
+            cls: 'deep-insight-ai-file-name',
             text: file.basename 
         });
         container.createEl('small', { 
-            cls: 'task-mind-file-path',
+            cls: 'deep-insight-ai-file-path',
             text: file.path 
         });
     }
@@ -218,7 +216,7 @@ class PromptNotesModal extends SuggestModal<TFile> {
             await this.plugin.saveSettings();
             new Notice(`${choice} prompt set to: ${file.basename}`);
         } catch (error) {
-            this.onError(new TaskMindError(
+            this.onError(new DeepInsightAIError(
                 'Failed to set prompt file',
                 'Settings',
                 error instanceof Error ? error : undefined
@@ -230,7 +228,7 @@ class PromptNotesModal extends SuggestModal<TFile> {
 class InsertPositionModal extends SuggestModal<InsertPosition> {
     constructor(
         app: App,
-        private plugin: TaskMind
+        private plugin: DeepInsightAI
     ) {
         super(app);
     }
@@ -240,7 +238,7 @@ class InsertPositionModal extends SuggestModal<InsertPosition> {
     }
 
     renderSuggestion(position: InsertPosition, el: HTMLElement): void {
-        const container = el.createDiv({ cls: 'task-mind-position-suggestion' });
+        const container = el.createDiv({ cls: 'deep-insight-ai-position-suggestion' });
         
         const descriptions: Record<InsertPosition, string> = {
             top: 'Insert at the beginning of the note',
@@ -259,8 +257,8 @@ class InsertPositionModal extends SuggestModal<InsertPosition> {
     }
 }
 
-export default class TaskMind extends Plugin {
-    settings: TaskMindSettings;
+export default class DeepInsightAI extends Plugin {
+    settings: DeepInsightAISettings;
     private networkStatus: NetworkStatusChecker;
 
     async onload(): Promise<void> {
@@ -301,7 +299,7 @@ export default class TaskMind extends Plugin {
             }
         });
 
-        this.addSettingTab(new TaskMindSettingTab(this.app, this));
+        this.addSettingTab(new DeepInsightAISettingTab(this.app, this));
     }
 
     onunload(): void {
@@ -310,9 +308,9 @@ export default class TaskMind extends Plugin {
 
     private handleNetworkChange(online: boolean): void {
         if (online) {
-            new Notice('TaskMind: Network connection restored');
+            new Notice('Deep Insight AI: Network connection restored');
         } else {
-            new Notice('TaskMind: Network connection lost', 5000);
+            new Notice('Deep Insight AI: Network connection lost', 5000);
         }
     }
 
@@ -350,12 +348,12 @@ export default class TaskMind extends Plugin {
 
     async callAnthropicAPI(content: string): Promise<string> {
         if (this.settings.offlineModeEnabled) {
-            throw new TaskMindError('Offline mode enabled', 'Network');
+            throw new DeepInsightAIError('Offline mode enabled', 'Network');
         }
     
         try {
             if (!this.settings.apiKey) {
-                throw new TaskMindError('API key not set', 'Settings');
+                throw new DeepInsightAIError('API key not set', 'Settings');
             }
     
             const systemPrompt = await this.getPromptFromNote(this.settings.systemPromptPath);
@@ -373,8 +371,7 @@ export default class TaskMind extends Plugin {
                 ]
             };
     
-            // Safe logging without sensitive information
-            console.log('TaskMind: Making API request:', {
+            console.log('Deep Insight AI: Making API request:', {
                 url: 'https://api.anthropic.com/v1/messages',
                 model: this.settings.model,
                 contentLength: content.length,
@@ -395,8 +392,7 @@ export default class TaskMind extends Plugin {
                 throw: false
             });
     
-            // Safe response logging
-            console.log('TaskMind: Received API Response:', {
+            console.log('Deep Insight AI: Received API Response:', {
                 status: response.status,
                 contentLength: response.text?.length || 0
             });
@@ -405,12 +401,12 @@ export default class TaskMind extends Plugin {
             try {
                 responseData = JSON.parse(response.text);
             } catch (e) {
-                console.error('TaskMind: Failed to parse response');
-                throw new TaskMindError('Failed to parse API response', 'API');
+                console.error('Deep Insight AI: Failed to parse response');
+                throw new DeepInsightAIError('Failed to parse API response', 'API');
             }
     
             if (response.status !== 200) {
-                console.error('TaskMind: API Error:', {
+                console.error('Deep Insight AI: API Error:', {
                     status: response.status,
                     error: responseData.error?.message
                 });
@@ -418,35 +414,34 @@ export default class TaskMind extends Plugin {
                 const errorMessage = responseData.error?.message || 
                                    `API request failed with status ${response.status}`;
                 
-                throw new TaskMindError(`API Error: ${errorMessage}`, 'API');
+                throw new DeepInsightAIError(`API Error: ${errorMessage}`, 'API');
             }
     
-            // Validate response content
             if (!responseData.content || !Array.isArray(responseData.content) || responseData.content.length === 0) {
-                throw new TaskMindError('API response missing content', 'API');
+                throw new DeepInsightAIError('API response missing content', 'API');
             }
     
             const messageContent = responseData.content[0];
             if (!messageContent || typeof messageContent.text !== 'string') {
-                throw new TaskMindError('Invalid API response format', 'API');
+                throw new DeepInsightAIError('Invalid API response format', 'API');
             }
     
             return messageContent.text;
     
         } catch (error) {
-            console.error('TaskMind: Error Details:', {
-                type: error instanceof TaskMindError ? error.type : 'Unknown',
+            console.error('Deep Insight AI: Error Details:', {
+                type: error instanceof DeepInsightAIError ? error.type : 'Unknown',
                 message: error instanceof Error ? error.message : 'Unknown error',
                 stack: process.env.NODE_ENV === 'development' ? 
                       (error instanceof Error ? error.stack : undefined) : 
                       undefined
             });
             
-            if (error instanceof TaskMindError) {
+            if (error instanceof DeepInsightAIError) {
                 throw error;
             }
             
-            throw new TaskMindError(
+            throw new DeepInsightAIError(
                 'API request failed: ' + (error instanceof Error ? error.message : 'Unknown error'),
                 'API',
                 error instanceof Error ? error : undefined
@@ -472,7 +467,7 @@ export default class TaskMind extends Plugin {
                     const tasks = await this.callAnthropicAPI(chunks[i].content);
                     allTasks += tasks + '\n\n';
                 } catch (error) {
-                    if (error instanceof TaskMindError && error.type === 'Network') {
+                    if (error instanceof DeepInsightAIError && error.type === 'Network') {
                         new Notice('Network error: Please check your connection or enable offline mode', 5000);
                         return;
                     }
@@ -489,12 +484,12 @@ export default class TaskMind extends Plugin {
     }
     
     private handleError(error: Error): void {
-        const message = error instanceof TaskMindError 
+        const message = error instanceof DeepInsightAIError 
             ? `${error.type} Error: ${error.message}`
             : `Error: ${error.message}`;
         
         new Notice(message, 5000);
-        console.error('TaskMind Error:', error);
+        console.error('Deep Insight AI Error:', error);
     }
 
     async getAllNotesContent(): Promise<{ content: string, size: number }[]> {
@@ -544,7 +539,7 @@ export default class TaskMind extends Plugin {
         }
     
         if (chunks.length === 0) {
-            throw new TaskMindError('No valid notes found to process', 'Processing');
+            throw new DeepInsightAIError('No valid notes found to process', 'Processing');
         }
     
         return chunks;
@@ -571,10 +566,10 @@ export default class TaskMind extends Plugin {
     }
 }
 
-class TaskMindSettingTab extends PluginSettingTab {
-    plugin: TaskMind;
+class DeepInsightAISettingTab extends PluginSettingTab {
+    plugin: DeepInsightAI;
 
-    constructor(app: App, plugin: TaskMind) {
+    constructor(app: App, plugin: DeepInsightAI) {
         super(app, plugin);
         this.plugin = plugin;
     }
