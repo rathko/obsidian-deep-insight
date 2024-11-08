@@ -1,3 +1,7 @@
+# Build output
+main.js
+*.js.map
+
 # Dependency directories
 node_modules/
 .pnpm-store/
@@ -10,6 +14,7 @@ build/
 # Development environment
 .vscode/
 .idea/
+*.iml
 *.sublime-workspace
 *.sublime-project
 

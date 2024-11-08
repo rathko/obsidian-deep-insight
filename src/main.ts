@@ -25,7 +25,7 @@ const DEFAULT_SETTINGS: DeepInsightAISettings = {
     systemPromptPath: '',
     userPromptPath: '',
     excludeFolders: ['templates', 'archive'],
-    chunkSize: 50,
+    chunkSize: 200,
     maxTokensPerRequest: 100000,
     insertPosition: 'cursor',
     defaultSystemPrompt: `You are a task extraction assistant. When analyzing notes:
@@ -490,24 +490,9 @@ export default class DeepInsightAI extends Plugin {
         if (chunkResults.length === 1) {
             return chunkResults[0];
         }
-
+    
         const combinedContent = chunkResults.join('\n\n=== Next Chunk ===\n\n');
         
-        const combinationPrompt = `You are receiving multiple sets of extracted tasks from different chunks of notes. Your job is to:
-
-1. Review all tasks across chunks
-2. Remove any duplicates
-3. Combine similar tasks
-4. Organize tasks by their folders/categories
-5. Ensure proper formatting is maintained
-6. Keep all source file references
-7. Maintain any priority indicators or context
-8. Create a cohesive, well-structured final output
-
-Here are the tasks from different chunks to combine:
-
-${combinedContent}`;
-
         try {
             const requestBody = {
                 model: this.settings.model,
@@ -516,11 +501,11 @@ ${combinedContent}`;
                 messages: [
                     {
                         role: 'user',
-                        content: combinationPrompt
+                        content: `${this.settings.defaultCombinationPrompt}\n\n${combinedContent}`
                     }
                 ]
             };
-
+    
             const response = await requestUrl({
                 url: 'https://api.anthropic.com/v1/messages',
                 method: 'POST',
@@ -533,18 +518,18 @@ ${combinedContent}`;
                 body: JSON.stringify(requestBody),
                 throw: false
             });
-
+    
             if (response.status !== 200) {
                 throw new DeepInsightAIError(`Failed to combine results: ${response.status}`, 'API');
             }
-
+    
             const responseData: AnthropicResponse = JSON.parse(response.text);
             if (!responseData.content?.[0]?.text) {
                 throw new DeepInsightAIError('Invalid response format when combining results', 'API');
             }
-
+    
             return responseData.content[0].text;
-
+    
         } catch (error) {
             console.error('Failed to combine chunk results:', error);
             throw new DeepInsightAIError(
