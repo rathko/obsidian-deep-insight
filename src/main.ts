@@ -15,8 +15,8 @@ interface DeepInsightAISettings {
     insertPosition: InsertPosition;
     defaultSystemPrompt: string;
     defaultUserPrompt: string;
+    defaultCombinationPrompt: string;
     retryAttempts: number;
-    offlineModeEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: DeepInsightAISettings = {
@@ -40,7 +40,18 @@ const DEFAULT_SETTINGS: DeepInsightAISettings = {
 Group tasks by their source folders to maintain organizational context.`,
     defaultUserPrompt: 'Please analyze these notes and create a prioritized list of tasks.',
     retryAttempts: 3,
-    offlineModeEnabled: false
+    defaultCombinationPrompt: `You are receiving multiple sets of extracted tasks from different chunks of notes. Your job is to:
+
+1. Review all tasks across chunks
+2. Remove any duplicates
+3. Combine similar tasks
+4. Organize tasks by their folders/categories
+5. Ensure proper formatting is maintained
+6. Keep all source file references
+7. Maintain any priority indicators or context
+8. Create a cohesive, well-structured final output
+
+Here are the tasks from different chunks to combine:`,
 };
 
 interface AnthropicMessage {
@@ -267,15 +278,15 @@ export default class DeepInsightAI extends Plugin {
         this.networkStatus.addListener(this.handleNetworkChange.bind(this));
 
         this.addCommand({
-            id: 'generate-tasks',
-            name: 'Generate Tasks from Notes',
+            id: 'generate-insights',
+            name: 'Generate Insights from Notes',
             editorCallback: (editor: Editor, view: MarkdownView) => 
                 this.generateTasks(editor).catch(this.handleError.bind(this))
         });
 
         this.addCommand({
             id: 'set-insert-position',
-            name: 'Set Task Insertion Position',
+            name: 'Set Insight Insertion Position',
             callback: () => this.showInsertPositionModal()
         });
 
@@ -287,16 +298,6 @@ export default class DeepInsightAI extends Plugin {
                 this, 
                 this.handleError.bind(this)
             ).open()
-        });
-
-        this.addCommand({
-            id: 'toggle-offline-mode',
-            name: 'Toggle Offline Mode',
-            callback: () => {
-                this.settings.offlineModeEnabled = !this.settings.offlineModeEnabled;
-                this.saveSettings();
-                new Notice(`Offline mode ${this.settings.offlineModeEnabled ? 'enabled' : 'disabled'}`);
-            }
         });
 
         this.addSettingTab(new DeepInsightAISettingTab(this.app, this));
@@ -347,10 +348,6 @@ export default class DeepInsightAI extends Plugin {
     }
 
     async callAnthropicAPI(content: string): Promise<string> {
-        if (this.settings.offlineModeEnabled) {
-            throw new DeepInsightAIError('Offline mode enabled', 'Network');
-        }
-    
         try {
             if (!this.settings.apiKey) {
                 throw new DeepInsightAIError('API key not set', 'Settings');
@@ -459,27 +456,102 @@ export default class DeepInsightAI extends Plugin {
             new Notice('Analyzing notes...');
             
             const chunks = await this.getAllNotesContent();
-            let allTasks = '';
+            const chunkResults: string[] = [];
             
+            // First pass: Process each chunk
             for (let i = 0; i < chunks.length; i++) {
                 new Notice(`Processing chunk ${i + 1} of ${chunks.length}...`);
                 try {
                     const tasks = await this.callAnthropicAPI(chunks[i].content);
-                    allTasks += tasks + '\n\n';
+                    chunkResults.push(tasks);
                 } catch (error) {
                     if (error instanceof DeepInsightAIError && error.type === 'Network') {
-                        new Notice('Network error: Please check your connection or enable offline mode', 5000);
+                        new Notice('Network error: Please check your connection', 5000);
                         return;
                     }
                     throw error;
                 }
             }
-            
-            await this.insertTasks(editor, allTasks);
-            new Notice('Tasks generated successfully!', 5000);
+
+            // Second pass: Combine all results
+            if (chunkResults.length > 0) {
+                new Notice('Combining results...');
+                const finalTasks = await this.combineChunkResults(chunkResults);
+                await this.insertTasks(editor, finalTasks);
+                new Notice('Tasks generated and combined successfully!', 5000);
+            }
             
         } catch (error) {
             this.handleError(error instanceof Error ? error : new Error(String(error)));
+        }
+    }
+
+    async combineChunkResults(chunkResults: string[]): Promise<string> {
+        if (chunkResults.length === 1) {
+            return chunkResults[0];
+        }
+
+        const combinedContent = chunkResults.join('\n\n=== Next Chunk ===\n\n');
+        
+        const combinationPrompt = `You are receiving multiple sets of extracted tasks from different chunks of notes. Your job is to:
+
+1. Review all tasks across chunks
+2. Remove any duplicates
+3. Combine similar tasks
+4. Organize tasks by their folders/categories
+5. Ensure proper formatting is maintained
+6. Keep all source file references
+7. Maintain any priority indicators or context
+8. Create a cohesive, well-structured final output
+
+Here are the tasks from different chunks to combine:
+
+${combinedContent}`;
+
+        try {
+            const requestBody = {
+                model: this.settings.model,
+                max_tokens: 4096,
+                system: this.settings.defaultSystemPrompt,
+                messages: [
+                    {
+                        role: 'user',
+                        content: combinationPrompt
+                    }
+                ]
+            };
+
+            const response = await requestUrl({
+                url: 'https://api.anthropic.com/v1/messages',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': this.settings.apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'accept': 'application/json'
+                },
+                body: JSON.stringify(requestBody),
+                throw: false
+            });
+
+            if (response.status !== 200) {
+                throw new DeepInsightAIError(`Failed to combine results: ${response.status}`, 'API');
+            }
+
+            const responseData: AnthropicResponse = JSON.parse(response.text);
+            if (!responseData.content?.[0]?.text) {
+                throw new DeepInsightAIError('Invalid response format when combining results', 'API');
+            }
+
+            return responseData.content[0].text;
+
+        } catch (error) {
+            console.error('Failed to combine chunk results:', error);
+            throw new DeepInsightAIError(
+                'Failed to combine results: ' + (error instanceof Error ? error.message : 'Unknown error'),
+                'Processing',
+                error instanceof Error ? error : undefined
+            );
         }
     }
     
@@ -578,6 +650,20 @@ class DeepInsightAISettingTab extends PluginSettingTab {
         const {containerEl} = this;
         containerEl.empty();
 
+        // Add some CSS for larger text areas
+        containerEl.createEl('style', {
+            text: `
+                .deep-insight-ai-prompt-textarea {
+                    min-height: 200px !important;
+                    width: 100%;
+                    font-family: monospace;
+                }
+                .deep-insight-ai-prompt-container {
+                    margin-bottom: 24px;
+                }
+            `
+        });
+
         new Setting(containerEl)
             .setName('Anthropic API Key')
             .setDesc('Your Anthropic API key')
@@ -636,39 +722,70 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        new Setting(containerEl)
-            .setName('Offline Mode')
-            .setDesc('Enable to prevent API calls when working offline')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.offlineModeEnabled)
-                .onChange(async (value) => {
-                    this.plugin.settings.offlineModeEnabled = value;
-                    await this.plugin.saveSettings();
-                    new Notice(`Offline mode ${value ? 'enabled' : 'disabled'}`);
-                }));
-
         containerEl.createEl('h3', { text: 'Default Prompts' });
         
-        new Setting(containerEl)
-            .setName('Default System Prompt')
-            .setDesc('Used when no system prompt note is selected')
-            .addTextArea(text => text
-                .setPlaceholder('Enter default system prompt')
-                .setValue(this.plugin.settings.defaultSystemPrompt)
-                .onChange(async (value) => {
-                    this.plugin.settings.defaultSystemPrompt = value;
-                    await this.plugin.saveSettings();
-                }));
+        // System Prompt
+        const systemPromptContainer = containerEl.createDiv({
+            cls: 'deep-insight-ai-prompt-container'
+        });
 
-        new Setting(containerEl)
-            .setName('Default User Prompt')
-            .setDesc('Used when no user prompt note is selected')
-            .addTextArea(text => text
-                .setPlaceholder('Enter default user prompt')
-                .setValue(this.plugin.settings.defaultUserPrompt)
-                .onChange(async (value) => {
-                    this.plugin.settings.defaultUserPrompt = value;
-                    await this.plugin.saveSettings();
-                }));
+        systemPromptContainer.createEl('h4', { text: 'Default System Prompt' });
+        systemPromptContainer.createEl('p', { 
+            text: 'Used when no system prompt note is selected. Defines how the AI should process notes.',
+            cls: 'setting-item-description'
+        });
+
+        const systemPromptTextarea = systemPromptContainer.createEl('textarea', {
+            cls: 'deep-insight-ai-prompt-textarea'
+        });
+        systemPromptTextarea.value = this.plugin.settings.defaultSystemPrompt;
+        systemPromptTextarea.addEventListener('change', async (e) => {
+            const target = e.target as HTMLTextAreaElement;
+            this.plugin.settings.defaultSystemPrompt = target.value;
+            await this.plugin.saveSettings();
+        });
+
+        // User Prompt
+        const userPromptContainer = containerEl.createDiv({
+            cls: 'deep-insight-ai-prompt-container'
+        });
+
+        userPromptContainer.createEl('h4', { text: 'Default User Prompt' });
+        userPromptContainer.createEl('p', { 
+            text: 'Used when no user prompt note is selected. Defines what specific insight to generate.',
+            cls: 'setting-item-description'
+        });
+
+        const userPromptTextarea = userPromptContainer.createEl('textarea', {
+            cls: 'deep-insight-ai-prompt-textarea'
+        });
+        userPromptTextarea.value = this.plugin.settings.defaultUserPrompt;
+        userPromptTextarea.addEventListener('change', async (e) => {
+            const target = e.target as HTMLTextAreaElement;
+            this.plugin.settings.defaultUserPrompt = target.value;
+            await this.plugin.saveSettings();
+        });
+
+        // Combination Prompt
+        const combinePromptContainer = containerEl.createDiv({
+            cls: 'deep-insight-ai-prompt-container'
+        });
+
+        combinePromptContainer.createEl('h4', { text: 'Default Combination Prompt' });
+        combinePromptContainer.createEl('p', { 
+            text: 'Used when combining tasks from multiple chunks. Defines how to merge and organize tasks.',
+            cls: 'setting-item-description'
+        });
+
+        const combinePromptTextarea = combinePromptContainer.createEl('textarea', {
+            cls: 'deep-insight-ai-prompt-textarea'
+        });
+        combinePromptTextarea.value = this.plugin.settings.defaultCombinationPrompt;
+        combinePromptTextarea.addEventListener('change', async (e) => {
+            const target = e.target as HTMLTextAreaElement;
+            this.plugin.settings.defaultCombinationPrompt = target.value;
+            await this.plugin.saveSettings();
+        });
+
     }
 }
