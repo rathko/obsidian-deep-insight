@@ -196,49 +196,81 @@ class PromptNotesModal extends SuggestModal<TFile> {
     constructor(
         app: App,
         private plugin: DeepInsightAI,
-        private onError: (error: Error) => void
+        private onError: (error: Error) => void,
+        private promptType: 'systemPromptPath' | 'userPromptPath' | 'combinationPromptPath'
     ) {
         super(app);
+        // Set a more descriptive placeholder for the search input
+        this.setPlaceholder('Type to search notes by title or path...');
     }
 
-    getSuggestions(): TFile[] {
-        return this.app.vault.getMarkdownFiles()
-            .filter(file => !this.plugin.settings.excludeFolders
-                .some(folder => file.path.toLowerCase().startsWith(folder.toLowerCase())));
+    getSuggestions(query: string): TFile[] {
+        const files = this.app.vault.getMarkdownFiles();
+        const excludedFolders = this.plugin.settings.excludeFolders;
+        
+        const filtered = files
+            // Filter out excluded folders
+            .filter(file => !excludedFolders
+                .some(folder => file.path.toLowerCase().startsWith(folder.toLowerCase())))
+            // Filter based on search query
+            .filter(file => {
+                if (!query) return true;
+                
+                const searchString = `${file.basename} ${file.path}`.toLowerCase();
+                const queries = query.toLowerCase().split(' ');
+                
+                // Match all space-separated terms
+                return queries.every(query => searchString.contains(query));
+            })
+            // Sort by path for better organization
+            .sort((a, b) => a.path.localeCompare(b.path));
+
+        return filtered;
     }
 
     renderSuggestion(file: TFile, el: HTMLElement): void {
         const container = el.createDiv({ cls: 'deep-insight-ai-file-suggestion' });
-        container.createEl('div', { 
+        
+        // Add file icon
+        container.createEl('span', {
+            cls: 'nav-file-title-content',
+            text: '📄 '
+        });
+        
+        // File name in bold
+        container.createEl('span', { 
             cls: 'deep-insight-ai-file-name',
-            text: file.basename 
+            text: file.basename,
+            attr: { style: 'font-weight: bold;' }
         });
-        container.createEl('small', { 
-            cls: 'deep-insight-ai-file-path',
-            text: file.path 
-        });
+        
+        // Show path in muted color
+        const pathText = file.parent ? ` (${file.parent.path})` : '';
+        if (pathText) {
+            container.createEl('span', { 
+                cls: 'deep-insight-ai-file-path',
+                text: pathText,
+                attr: { style: 'color: var(--text-muted);' }
+            });
+        }
     }
 
     async onChooseSuggestion(file: TFile): Promise<void> {
         try {
-            const choice = await new Promise<PromptType>((resolve) => {
-                new PromptTypeModal(this.app, (value) => resolve(value)).open();
-            });
-
-            switch (choice) {
-                case 'system':
-                    this.plugin.settings.systemPromptPath = file.path;
-                    break;
-                case 'user':
-                    this.plugin.settings.userPromptPath = file.path;
-                    break;
-                case 'combination':
-                    this.plugin.settings.combinationPromptPath = file.path;
-                    break;
-            }
+            // Update the appropriate prompt path based on type
+            const settings = this.plugin.settings as any;
+            settings[this.promptType] = file.path;
             
             await this.plugin.saveSettings();
-            new Notice(`${choice} prompt set to: ${file.basename}`);
+            
+            // Show success notice
+            const promptTypes = {
+                systemPromptPath: 'System',
+                userPromptPath: 'User',
+                combinationPromptPath: 'Combination'
+            };
+            new Notice(`${promptTypes[this.promptType]} prompt set to: ${file.basename}`);
+            
         } catch (error) {
             this.onError(new DeepInsightAIError(
                 'Failed to set prompt file',
@@ -295,22 +327,6 @@ export default class DeepInsightAI extends Plugin {
             name: 'Generate Insights from Notes',
             editorCallback: (editor: Editor, view: MarkdownView) => 
                 this.generateTasks(editor).catch(this.handleError.bind(this))
-        });
-
-        this.addCommand({
-            id: 'set-insert-position',
-            name: 'Set Insight Insertion Position',
-            callback: () => this.showInsertPositionModal()
-        });
-
-        this.addCommand({
-            id: 'select-prompt-notes',
-            name: 'Select Prompt Notes',
-            callback: () => new PromptNotesModal(
-                this.app, 
-                this, 
-                this.handleError.bind(this)
-            ).open()
         });
 
         this.addSettingTab(new DeepInsightAISettingTab(this.app, this));
@@ -725,7 +741,8 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                         this.plugin,
                         (error) => {
                             new Notice(`Failed to set prompt note: ${error.message}`);
-                        }
+                        },
+                        pathSetting
                     ).open();
                 }));
 
@@ -821,7 +838,28 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                     });
             });
 
-        // Other settings...
+        // Insert Position Setting
+        new Setting(containerEl)
+            .setName('Insert Position')
+            .setDesc('Where to insert generated insights in the note')
+            .addDropdown(dropdown => {
+                const options = {
+                    'top': 'At the top of the note',
+                    'bottom': 'At the bottom of the note',
+                    'cursor': 'At current cursor position'
+                };
+                
+                dropdown
+                    .addOptions(options)
+                    .setValue(this.plugin.settings.insertPosition)
+                    .onChange(async (value: InsertPosition) => {
+                        this.plugin.settings.insertPosition = value;
+                        await this.plugin.saveSettings();
+                        new Notice(`Insert position set to: ${value}`);
+                    });
+            });
+        
+        // Other settings
         new Setting(containerEl)
             .setName('Chunk Size')
             .setDesc('Number of notes to process at once (lower for larger notes)')
