@@ -11,7 +11,6 @@ interface DeepInsightAISettings {
     userPromptPath: string;
     combinationPromptPath: string;
     excludeFolders: string[];
-    chunkSize: number;
     maxTokensPerRequest: number;
     insertPosition: InsertPosition;
     defaultSystemPrompt: string;
@@ -27,8 +26,7 @@ const DEFAULT_SETTINGS: DeepInsightAISettings = {
     userPromptPath: '',
     combinationPromptPath: '',
     excludeFolders: ['templates', 'archive'],
-    chunkSize: 200,
-    maxTokensPerRequest: 100000,
+    maxTokensPerRequest: 90000,
     insertPosition: 'cursor',
     defaultSystemPrompt: `You are a task extraction assistant. When analyzing notes:
 1. Consider the note's folder path as context for task importance and categorization
@@ -41,7 +39,6 @@ const DEFAULT_SETTINGS: DeepInsightAISettings = {
 
 Group tasks by their source folders to maintain organizational context.`,
     defaultUserPrompt: 'Please analyze these notes and create a prioritized list of tasks.',
-    retryAttempts: 3,
     defaultCombinationPrompt: `You are receiving multiple sets of extracted tasks from different chunks of notes. Your job is to:
 
 1. Review all tasks across chunks
@@ -54,6 +51,7 @@ Group tasks by their source folders to maintain organizational context.`,
 8. Create a cohesive, well-structured final output
 
 Here are the tasks from different chunks to combine:`,
+    retryAttempts: 3
 };
 
 interface AnthropicMessage {
@@ -580,6 +578,28 @@ export default class DeepInsightAI extends Plugin {
     }
 
     async getAllNotesContent(): Promise<{ content: string, size: number }[]> {
+        // Get actual prompts
+        const systemPrompt = await this.getPromptFromNote(this.settings.systemPromptPath) || this.settings.defaultSystemPrompt;
+        const userPrompt = await this.getPromptFromNote(this.settings.userPromptPath) || this.settings.defaultUserPrompt;
+    
+        // Calculate prompt sizes (rough estimate: 3 chars per token)
+        const systemPromptSize = systemPrompt.length / 3;
+        const userPromptSize = userPrompt.length / 3;
+        
+        // Reserve tokens for prompts and leave some space for response
+        const RESPONSE_TOKENS = 10000; // Reserve ~10K tokens for response
+        const RESERVED_TOKENS = Math.ceil(systemPromptSize + userPromptSize + RESPONSE_TOKENS);
+        const MAX_CHUNK_SIZE = this.settings.maxTokensPerRequest - RESERVED_TOKENS;
+        const MAX_CHUNK_CHARS = MAX_CHUNK_SIZE * 3;
+    
+        console.log('Deep Insight AI: Token allocation:', {
+            totalAvailable: this.settings.maxTokensPerRequest,
+            systemPromptTokens: Math.ceil(systemPromptSize),
+            userPromptTokens: Math.ceil(userPromptSize),
+            responseTokens: RESPONSE_TOKENS,
+            availableForContent: MAX_CHUNK_SIZE
+        });
+    
         const files = this.app.vault.getMarkdownFiles()
             .filter(file => !this.settings.excludeFolders
                 .some(folder => file.path.toLowerCase().startsWith(folder.toLowerCase())));
@@ -587,7 +607,6 @@ export default class DeepInsightAI extends Plugin {
         const chunks: { content: string, size: number }[] = [];
         let currentChunk = '';
         let currentSize = 0;
-        let noteCount = 0;
     
         for (const file of files) {
             try {
@@ -604,23 +623,25 @@ export default class DeepInsightAI extends Plugin {
     === End Note ===
     
     `;
-                currentChunk += noteContent;
-                currentSize += noteContent.length;
-                noteCount++;
+                const noteSize = noteContent.length;
     
-                if (noteCount >= this.settings.chunkSize || 
-                    currentSize >= this.settings.maxTokensPerRequest) {
+                // If adding this note would exceed the chunk size, start a new chunk
+                if (currentSize + noteSize > MAX_CHUNK_CHARS && currentChunk) {
                     chunks.push({ content: currentChunk, size: currentSize });
                     currentChunk = '';
                     currentSize = 0;
-                    noteCount = 0;
                 }
+    
+                currentChunk += noteContent;
+                currentSize += noteSize;
+    
             } catch (error) {
                 new Notice(`Failed to read file ${file.path}`);
                 console.error(`Error reading file ${file.path}:`, error);
             }
         }
     
+        // Add the last chunk if it contains anything
         if (currentChunk) {
             chunks.push({ content: currentChunk, size: currentSize });
         }
@@ -628,6 +649,17 @@ export default class DeepInsightAI extends Plugin {
         if (chunks.length === 0) {
             throw new DeepInsightAIError('No valid notes found to process', 'Processing');
         }
+    
+        // Log detailed chunk information
+        chunks.forEach((chunk, i) => {
+            const estimatedTokens = Math.round(chunk.size / 3);
+            const totalEstimatedTokens = Math.round((chunk.size + systemPrompt.length + userPrompt.length) / 3);
+            console.log(`Deep Insight AI: Chunk ${i + 1}:`, {
+                contentTokens: estimatedTokens,
+                totalWithPrompts: totalEstimatedTokens,
+                percentOfLimit: Math.round((totalEstimatedTokens / this.settings.maxTokensPerRequest) * 100) + '%'
+            });
+        });
     
         return chunks;
     }
@@ -859,19 +891,6 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                     });
             });
         
-        // Other settings
-        new Setting(containerEl)
-            .setName('Chunk Size')
-            .setDesc('Number of notes to process at once (lower for larger notes)')
-            .addSlider(slider => slider
-                .setLimits(10, 500, 10)
-                .setValue(this.plugin.settings.chunkSize)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    this.plugin.settings.chunkSize = value;
-                    await this.plugin.saveSettings();
-                }));
-
         new Setting(containerEl)
             .setName('Excluded Folders')
             .setDesc('Comma-separated list of folders to exclude')
