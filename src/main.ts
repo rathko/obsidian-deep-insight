@@ -645,11 +645,114 @@ class DeepInsightAISettingTab extends PluginSettingTab {
         this.plugin = plugin;
     }
 
+    private createPromptSection(
+        containerEl: HTMLElement,
+        title: string,
+        description: string,
+        pathSetting: 'systemPromptPath' | 'userPromptPath' | 'combinationPromptPath',
+        defaultSetting: 'defaultSystemPrompt' | 'defaultUserPrompt' | 'defaultCombinationPrompt'
+    ): void {
+        const container = containerEl.createDiv({
+            cls: 'deep-insight-ai-prompt-container'
+        });
+
+        container.createEl('h4', { text: title });
+        container.createEl('p', { 
+            text: description,
+            cls: 'setting-item-description'
+        });
+
+        // Create note link section if a note is selected
+        const notePath = this.plugin.settings[pathSetting];
+        if (notePath) {
+            const linkContainer = container.createDiv({
+                cls: 'deep-insight-ai-note-link'
+            });
+
+            // Add note icon
+            linkContainer.createEl('span', {
+                cls: 'setting-editor-extra-setting-button',
+                text: '📝'
+            });
+
+            // Create link to the note
+            const link = linkContainer.createEl('a');
+            link.textContent = notePath;
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const file = this.app.vault.getAbstractFileByPath(notePath);
+                if (file instanceof TFile) {
+                    const leaf = this.app.workspace.getLeaf();
+                    if (leaf) {
+                        leaf.openFile(file);
+                    }
+                }
+            });
+
+            // Add remove button
+            const removeButton = linkContainer.createEl('span', {
+                cls: 'deep-insight-ai-note-link-remove',
+                text: '×'
+            });
+            removeButton.addEventListener('click', async () => {
+                const settings = this.plugin.settings as any;
+                settings[pathSetting] = '';
+                await this.plugin.saveSettings();
+                this.display(); // Refresh the settings tab
+                new Notice(`${title} note removed`);
+            });
+
+            // Show that we're using the custom note
+            container.createEl('div', {
+                cls: 'deep-insight-ai-prompt-source',
+                text: 'Using custom prompt from the linked note'
+            });
+        } else {
+            // Show that we're using the default prompt
+            container.createEl('div', {
+                cls: 'deep-insight-ai-prompt-source',
+                text: 'Using default prompt (no note selected)'
+            });
+        }
+
+        // Add button to select a new note
+        new Setting(container)
+            .addButton(button => button
+                .setButtonText(notePath ? 'Change Note' : 'Select Note')
+                .onClick(() => {
+                    new PromptNotesModal(
+                        this.app,
+                        this.plugin,
+                        (error) => {
+                            new Notice(`Failed to set prompt note: ${error.message}`);
+                        }
+                    ).open();
+                }));
+
+        // Show default prompt textarea
+        const textarea = container.createEl('textarea', {
+            cls: 'deep-insight-ai-prompt-textarea'
+        });
+        
+        const defaultValue = this.plugin.settings[defaultSetting];
+        if (typeof defaultValue === 'string') {
+            textarea.value = defaultValue;
+        }
+        
+        textarea.placeholder = notePath ? 'Default prompt (used as fallback)' : 'Enter default prompt';
+        textarea.addEventListener('change', async (e) => {
+            const target = e.target as HTMLTextAreaElement;
+            const settings = this.plugin.settings as any;
+            settings[defaultSetting] = target.value;
+            await this.plugin.saveSettings();
+        });
+    }
+
     display(): void {
         const {containerEl} = this;
         containerEl.empty();
 
-        // Add some CSS for larger text areas
+        // Add CSS for styling
         containerEl.createEl('style', {
             text: `
                 .deep-insight-ai-prompt-textarea {
@@ -660,9 +763,34 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                 .deep-insight-ai-prompt-container {
                     margin-bottom: 24px;
                 }
+                .deep-insight-ai-note-link {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 12px;
+                    padding: 8px;
+                    background: var(--background-secondary);
+                    border-radius: 4px;
+                }
+                .deep-insight-ai-note-link a {
+                    color: var(--text-accent);
+                    text-decoration: underline;
+                }
+                .deep-insight-ai-note-link-remove {
+                    color: var(--text-error);
+                    cursor: pointer;
+                    padding: 4px;
+                }
+                .deep-insight-ai-prompt-source {
+                    font-size: 0.9em;
+                    color: var(--text-muted);
+                    margin-bottom: 8px;
+                    font-style: italic;
+                }
             `
         });
 
+        // API Key Setting
         new Setting(containerEl)
             .setName('Anthropic API Key')
             .setDesc('Your Anthropic API key')
@@ -674,6 +802,7 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
+        // Model Selection
         new Setting(containerEl)
             .setName('Model')
             .setDesc('Select Claude model to use')
@@ -689,15 +818,10 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                     .onChange(async (value: AnthropicModel) => {
                         this.plugin.settings.model = value;
                         await this.plugin.saveSettings();
-                        
-                        const modelInfo = {
-                            'claude-3-5-sonnet-latest': 'Recommended for detailed analysis',
-                            'claude-3-5-haiku-latest': 'Best for quick tasks'
-                        };
-                        new Notice(modelInfo[value], 3000);
                     });
             });
 
+        // Other settings...
         new Setting(containerEl)
             .setName('Chunk Size')
             .setDesc('Number of notes to process at once (lower for larger notes)')
@@ -721,70 +845,34 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        containerEl.createEl('h3', { text: 'Default Prompts' });
-        
+        // Prompt Settings Section
+        containerEl.createEl('h3', { text: 'Prompts Configuration' });
+
         // System Prompt
-        const systemPromptContainer = containerEl.createDiv({
-            cls: 'deep-insight-ai-prompt-container'
-        });
-
-        systemPromptContainer.createEl('h4', { text: 'Default System Prompt' });
-        systemPromptContainer.createEl('p', { 
-            text: 'Used when no system prompt note is selected. Defines how the AI should process notes.',
-            cls: 'setting-item-description'
-        });
-
-        const systemPromptTextarea = systemPromptContainer.createEl('textarea', {
-            cls: 'deep-insight-ai-prompt-textarea'
-        });
-        systemPromptTextarea.value = this.plugin.settings.defaultSystemPrompt;
-        systemPromptTextarea.addEventListener('change', async (e) => {
-            const target = e.target as HTMLTextAreaElement;
-            this.plugin.settings.defaultSystemPrompt = target.value;
-            await this.plugin.saveSettings();
-        });
+        this.createPromptSection(
+            containerEl,
+            'System Prompt',
+            'Defines how the AI should process notes',
+            'systemPromptPath',
+            'defaultSystemPrompt'
+        );
 
         // User Prompt
-        const userPromptContainer = containerEl.createDiv({
-            cls: 'deep-insight-ai-prompt-container'
-        });
-
-        userPromptContainer.createEl('h4', { text: 'Default User Prompt' });
-        userPromptContainer.createEl('p', { 
-            text: 'Used when no user prompt note is selected. Defines what specific insight to generate.',
-            cls: 'setting-item-description'
-        });
-
-        const userPromptTextarea = userPromptContainer.createEl('textarea', {
-            cls: 'deep-insight-ai-prompt-textarea'
-        });
-        userPromptTextarea.value = this.plugin.settings.defaultUserPrompt;
-        userPromptTextarea.addEventListener('change', async (e) => {
-            const target = e.target as HTMLTextAreaElement;
-            this.plugin.settings.defaultUserPrompt = target.value;
-            await this.plugin.saveSettings();
-        });
+        this.createPromptSection(
+            containerEl,
+            'User Prompt',
+            'Defines what specific insight to generate',
+            'userPromptPath',
+            'defaultUserPrompt'
+        );
 
         // Combination Prompt
-        const combinePromptContainer = containerEl.createDiv({
-            cls: 'deep-insight-ai-prompt-container'
-        });
-
-        combinePromptContainer.createEl('h4', { text: 'Default Combination Prompt' });
-        combinePromptContainer.createEl('p', { 
-            text: 'Used when combining tasks from multiple chunks. Defines how to merge and organize tasks.',
-            cls: 'setting-item-description'
-        });
-
-        const combinePromptTextarea = combinePromptContainer.createEl('textarea', {
-            cls: 'deep-insight-ai-prompt-textarea'
-        });
-        combinePromptTextarea.value = this.plugin.settings.defaultCombinationPrompt;
-        combinePromptTextarea.addEventListener('change', async (e) => {
-            const target = e.target as HTMLTextAreaElement;
-            this.plugin.settings.defaultCombinationPrompt = target.value;
-            await this.plugin.saveSettings();
-        });
-
+        this.createPromptSection(
+            containerEl,
+            'Combination Prompt',
+            'Defines how to merge and organize tasks from multiple chunks',
+            'combinationPromptPath',
+            'defaultCombinationPrompt'
+        );
     }
 }
