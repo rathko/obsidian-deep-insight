@@ -1,7 +1,7 @@
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, SuggestModal, requestUrl } from 'obsidian';
 
 type InsertPosition = 'top' | 'bottom' | 'cursor';
-type PromptType = 'system' | 'user';
+type PromptType = 'system' | 'user' | 'combination';
 type AnthropicModel = 'claude-3-5-sonnet-latest' | 'claude-3-5-haiku-latest';
 
 interface DeepInsightAISettings {
@@ -9,6 +9,7 @@ interface DeepInsightAISettings {
     model: AnthropicModel;
     systemPromptPath: string;
     userPromptPath: string;
+    combinationPromptPath: string;
     excludeFolders: string[];
     chunkSize: number;
     maxTokensPerRequest: number;
@@ -24,6 +25,7 @@ const DEFAULT_SETTINGS: DeepInsightAISettings = {
     model: 'claude-3-5-sonnet-latest',
     systemPromptPath: '',
     userPromptPath: '',
+    combinationPromptPath: '',
     excludeFolders: ['templates', 'archive'],
     chunkSize: 200,
     maxTokensPerRequest: 100000,
@@ -164,7 +166,7 @@ class PromptTypeModal extends SuggestModal<PromptType> {
     }
 
     getSuggestions(): PromptType[] {
-        return ['system', 'user'];
+        return ['system', 'user', 'combination'];
     }
 
     renderSuggestion(value: PromptType, el: HTMLElement): void {
@@ -173,11 +175,15 @@ class PromptTypeModal extends SuggestModal<PromptType> {
             text: `Set as ${value} prompt` 
         });
 
+        const descriptions = {
+            system: 'Define how the AI should process notes',
+            user: 'Define what specific insights to generate',
+            combination: 'Define how to combine results from multiple chunks'
+        };
+
         el.createEl('small', { 
             cls: 'deep-insight-ai-suggestion-desc',
-            text: value === 'system' 
-                ? 'Define how the AI should process notes' 
-                : 'Define what specific tasks to generate'
+            text: descriptions[value]
         });
     }
 
@@ -219,11 +225,18 @@ class PromptNotesModal extends SuggestModal<TFile> {
                 new PromptTypeModal(this.app, (value) => resolve(value)).open();
             });
 
-            if (choice === 'system') {
-                this.plugin.settings.systemPromptPath = file.path;
-            } else {
-                this.plugin.settings.userPromptPath = file.path;
+            switch (choice) {
+                case 'system':
+                    this.plugin.settings.systemPromptPath = file.path;
+                    break;
+                case 'user':
+                    this.plugin.settings.userPromptPath = file.path;
+                    break;
+                case 'combination':
+                    this.plugin.settings.combinationPromptPath = file.path;
+                    break;
             }
+            
             await this.plugin.saveSettings();
             new Notice(`${choice} prompt set to: ${file.basename}`);
         } catch (error) {
@@ -492,6 +505,7 @@ export default class DeepInsightAI extends Plugin {
         }
     
         const combinedContent = chunkResults.join('\n\n=== Next Chunk ===\n\n');
+        const combinationPrompt = await this.getPromptFromNote(this.settings.combinationPromptPath);
         
         try {
             const requestBody = {
@@ -501,7 +515,7 @@ export default class DeepInsightAI extends Plugin {
                 messages: [
                     {
                         role: 'user',
-                        content: `${this.settings.defaultCombinationPrompt}\n\n${combinedContent}`
+                        content: `${combinationPrompt}\n\n${combinedContent}`
                     }
                 ]
             };
