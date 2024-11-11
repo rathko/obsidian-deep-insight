@@ -10,18 +10,18 @@ module.exports = {
     ],
     parserOptions: {
         sourceType: 'module',
-        ecmaVersion: 2020,
+        ecmaVersion: 2022,
     },
     rules: {
-        '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
+        '@typescript-eslint/no-unused-vars': ['error', { 
+            args: 'none',
+            varsIgnorePattern: 'DeepInsightAISettingTab'
+        }],
         '@typescript-eslint/ban-ts-comment': 'off',
         'no-prototype-builtins': 'off',
         '@typescript-eslint/no-empty-function': 'off',
         '@typescript-eslint/no-explicit-any': 'warn',
         '@typescript-eslint/explicit-module-boundary-types': 'warn',
-        '@typescript-eslint/no-unused-vars': ['error', { 
-            'varsIgnorePattern': 'DeepInsightAISettingTab'
-        }],
         'prefer-const': 'warn',
         'no-var': 'error',
         'eqeqeq': ['error', 'always'],
@@ -31,7 +31,8 @@ module.exports = {
         'no-duplicate-imports': 'error'
     },
     env: {
-        'node': true,
-        'browser': true
+        node: true,
+        browser: true,
+        es2022: true
     }
 };

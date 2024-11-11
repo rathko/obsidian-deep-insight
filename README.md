@@ -96,9 +96,8 @@ A: Currently, the plugin supports Claude 3.5 models only.
 1. Checkout the repo into the Obsidian plugins folder
 2. Build the plugin
 ```
-# Install nvm
+# Install nvm, or make sure you do have node v16.19.1
 nvm use
-# Or make sure you do have node v16.19.1
 npm install
 npm run build
 ```

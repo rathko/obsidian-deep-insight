@@ -79,6 +79,14 @@ class DeepInsightAIError extends Error {
     }
 }
 
+function isAnthropicModel(value: string): value is AnthropicModel {
+    return value === 'claude-3-5-sonnet-latest' || value === 'claude-3-5-haiku-latest';
+}
+
+function isInsertPosition(value: string): value is InsertPosition {
+    return value === 'top' || value === 'bottom' || value === 'cursor';
+}
+
 class NetworkStatusChecker {
     private static instance: NetworkStatusChecker;
     private isOnline: boolean = navigator.onLine;
@@ -245,8 +253,8 @@ class InsertPositionModal extends SuggestModal<InsertPosition> {
 }
 
 export default class DeepInsightAI extends Plugin {
-    settings: DeepInsightAISettings;
-    private networkStatus: NetworkStatusChecker;
+    settings!: DeepInsightAISettings;
+    private networkStatus!: NetworkStatusChecker;
     private isProcessing = false;
 
     async onload(): Promise<void> {
@@ -825,7 +833,11 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                 dropdown
                     .addOptions(options)
                     .setValue(this.plugin.settings.model)
-                    .onChange(async (value: AnthropicModel) => {
+                    .onChange(async (value) => {
+                        if (!isAnthropicModel(value)) {
+                            new Notice('Invalid model selection');
+                            return;
+                        }
                         this.plugin.settings.model = value;
                         await this.plugin.saveSettings();
                     });
@@ -845,7 +857,11 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                 dropdown
                     .addOptions(options)
                     .setValue(this.plugin.settings.insertPosition)
-                    .onChange(async (value: InsertPosition) => {
+                    .onChange(async (value) => {
+                        if (!isInsertPosition(value)) {
+                            new Notice('Invalid insert position');
+                            return;
+                        }
                         this.plugin.settings.insertPosition = value;
                         await this.plugin.saveSettings();
                         new Notice(`Insert position set to: ${value}`);
