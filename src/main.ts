@@ -347,6 +347,16 @@ export default class DeepInsightAI extends Plugin {
                 hasSystemPrompt: !!systemPrompt,
                 hasUserPrompt: !!userPrompt
             });
+
+            // Show waiting notice
+            const waitingNotice = new Notice('🤔 Waiting for AI response...', 0);
+            const startTime = Date.now();
+            
+            // Update notice with elapsed time every second
+            const updateInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                waitingNotice.setMessage(`🤔 Processing... (${elapsed}s)`);
+            }, 1000);
     
             const response = await requestUrl({
                 url: 'https://api.anthropic.com/v1/messages',
@@ -360,10 +370,15 @@ export default class DeepInsightAI extends Plugin {
                 body: JSON.stringify(requestBody),
                 throw: false
             });
+
+            // Clear the waiting notice and interval
+            clearInterval(updateInterval);
+            waitingNotice.hide();
     
             console.log('Deep Insight AI: Received API Response:', {
                 status: response.status,
-                contentLength: response.text?.length || 0
+                contentLength: response.text?.length || 0,
+                timeElapsed: `${Math.floor((Date.now() - startTime) / 1000)}s`
             });
     
             let responseData: AnthropicResponse;
@@ -486,6 +501,16 @@ export default class DeepInsightAI extends Plugin {
         new Notice('🎭 Harmonizing multiple perspectives...');
         const combinedContent = chunkResults.join('\n\n=== Next Chunk ===\n\n');
         const combinationPrompt = await this.getPromptFromNote(this.settings.combinationPromptPath);
+
+        // Show waiting notice for combination phase
+        const waitingNotice = new Notice('🔄 Combining insights...', 0);
+        const startTime = Date.now();
+        
+        // Update notice with elapsed time every second
+        const updateInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            waitingNotice.setMessage(`🔄 Combining insights... (${elapsed}s)`);
+        }, 1000);
         
         try {
             const requestBody = {
@@ -512,6 +537,10 @@ export default class DeepInsightAI extends Plugin {
                 body: JSON.stringify(requestBody),
                 throw: false
             });
+
+            // Clear the waiting notice and interval
+            clearInterval(updateInterval);
+            waitingNotice.hide();
     
             if (response.status !== 200) {
                 throw new DeepInsightAIError(`Failed to combine results: ${response.status}`, 'API');
@@ -525,6 +554,10 @@ export default class DeepInsightAI extends Plugin {
             return responseData.content[0].text;
     
         } catch (error) {
+            // Clear the waiting notice and interval in case of error
+            clearInterval(updateInterval);
+            waitingNotice.hide();
+
             console.error('Failed to combine chunk results:', error);
             throw new DeepInsightAIError(
                 'Failed to combine results: ' + (error instanceof Error ? error.message : 'Unknown error'),
