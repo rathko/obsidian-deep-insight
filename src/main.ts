@@ -1,7 +1,6 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, SuggestModal, requestUrl } from 'obsidian';
+import { App, Editor, Notice, Plugin, PluginSettingTab, Setting, TFile, SuggestModal, requestUrl } from 'obsidian';
 
 type InsertPosition = 'top' | 'bottom' | 'cursor';
-type PromptType = 'system' | 'user' | 'combination';
 type AnthropicModel = 'claude-3-5-sonnet-latest' | 'claude-3-5-haiku-latest';
 
 interface DeepInsightAISettings {
@@ -51,7 +50,7 @@ Group tasks by their source folders to maintain organizational context.`,
 8. Create a cohesive, well-structured final output
 
 Here are the tasks from different chunks to combine:`,
-    retryAttempts: 3
+    retryAttempts: 2
 };
 
 interface AnthropicMessage {
@@ -122,74 +121,6 @@ class NetworkStatusChecker {
     }
 }
 
-class ConfirmationModal extends Modal {
-    constructor(
-        app: App,
-        private title: string,
-        private message: string,
-        private onConfirm: () => void
-    ) {
-        super(app);
-    }
-
-    onOpen(): void {
-        const { contentEl } = this;
-        contentEl.createEl('h2', { text: this.title });
-        contentEl.createEl('p', { text: this.message });
-
-        const buttonContainer = contentEl.createDiv({ cls: 'deep-insight-ai-button-container' });
-
-        buttonContainer.createEl('button', { text: 'Confirm' })
-            .addEventListener('click', () => {
-                this.onConfirm();
-                this.close();
-            });
-
-        buttonContainer.createEl('button', { text: 'Cancel' })
-            .addEventListener('click', () => this.close());
-    }
-
-    onClose(): void {
-        const { contentEl } = this;
-        contentEl.empty();
-    }
-}
-
-class PromptTypeModal extends SuggestModal<PromptType> {
-    constructor(
-        app: App,
-        private callback: (choice: PromptType) => void
-    ) {
-        super(app);
-    }
-
-    getSuggestions(): PromptType[] {
-        return ['system', 'user', 'combination'];
-    }
-
-    renderSuggestion(value: PromptType, el: HTMLElement): void {
-        el.createEl('div', { 
-            cls: 'deep-insight-ai-suggestion',
-            text: `Set as ${value} prompt` 
-        });
-
-        const descriptions = {
-            system: 'Define how the AI should process notes',
-            user: 'Define what specific insights to generate',
-            combination: 'Define how to combine results from multiple chunks'
-        };
-
-        el.createEl('small', { 
-            cls: 'deep-insight-ai-suggestion-desc',
-            text: descriptions[value]
-        });
-    }
-
-    onChooseSuggestion(value: PromptType): void {
-        this.callback(value);
-    }
-}
-
 class PromptNotesModal extends SuggestModal<TFile> {
     constructor(
         app: App,
@@ -212,7 +143,9 @@ class PromptNotesModal extends SuggestModal<TFile> {
                 .some(folder => file.path.toLowerCase().startsWith(folder.toLowerCase())))
             // Filter based on search query
             .filter(file => {
-                if (!query) return true;
+                if (!query) {
+                    return true;
+                }
                 
                 const searchString = `${file.basename} ${file.path}`.toLowerCase();
                 const queries = query.toLowerCase().split(' ');
@@ -256,7 +189,7 @@ class PromptNotesModal extends SuggestModal<TFile> {
     async onChooseSuggestion(file: TFile): Promise<void> {
         try {
             // Update the appropriate prompt path based on type
-            const settings = this.plugin.settings as any;
+            const settings = this.plugin.settings as DeepInsightAISettings;
             settings[this.promptType] = file.path;
             
             await this.plugin.saveSettings();
@@ -314,20 +247,23 @@ class InsertPositionModal extends SuggestModal<InsertPosition> {
 export default class DeepInsightAI extends Plugin {
     settings: DeepInsightAISettings;
     private networkStatus: NetworkStatusChecker;
+    private isProcessing = false;
 
     async onload(): Promise<void> {
         await this.loadSettings();
         this.networkStatus = NetworkStatusChecker.getInstance();
-        this.networkStatus.addListener(this.handleNetworkChange.bind(this));
-
+        
         this.addCommand({
             id: 'generate-insights',
             name: 'Generate Insights from Notes',
-            editorCallback: (editor: Editor, view: MarkdownView) => 
-                this.generateTasks(editor).catch(this.handleError.bind(this))
+            editorCallback: (editor: Editor) => {
+                this.generateTasks(editor);
+            }
         });
-
+    
         this.addSettingTab(new DeepInsightAISettingTab(this.app, this));
+    
+        this.networkStatus.addListener(this.handleNetworkChange.bind(this));
     }
 
     onunload(): void {
@@ -335,10 +271,11 @@ export default class DeepInsightAI extends Plugin {
     }
 
     private handleNetworkChange(online: boolean): void {
-        if (online) {
-            new Notice('Deep Insight AI: Network connection restored');
-        } else {
-            new Notice('Deep Insight AI: Network connection lost', 5000);
+        // Only show network notifications if we're actively processing
+        if (this.isProcessing) {
+            if (!online) {
+                new Notice('📡 Network connection lost. Don\'t worry - we\'ll resume processing when connection is restored.', 5000);
+            }
         }
     }
 
@@ -480,32 +417,52 @@ export default class DeepInsightAI extends Plugin {
                 return;
             }
     
-            new Notice('Analyzing notes...');
+            new Notice('🔍 Starting your knowledge journey...');
             
             const chunks = await this.getAllNotesContent();
             const chunkResults: string[] = [];
             
-            // First pass: Process each chunk
+            // First pass: Process each chunk with engaging messages
             for (let i = 0; i < chunks.length; i++) {
-                new Notice(`Processing chunk ${i + 1} of ${chunks.length}...`);
+                const messages = [
+                    '🧠 Diving deep into your notes...',
+                    '💫 Extracting pearls of wisdom...',
+                    '🎯 Connecting the dots in your notes...',
+                    '✨ Uncovering insights...',
+                    '🔮 Crystallizing your thoughts...'
+                ];
+                
+                // Show a random message for variety
+                new Notice(
+                    `${messages[Math.floor(Math.random() * messages.length)]} ` +
+                    `(Processing chunk ${i + 1} of ${chunks.length})`
+                );
+                
                 try {
                     const tasks = await this.callAnthropicAPI(chunks[i].content);
                     chunkResults.push(tasks);
+                    
+                    // Show progress confirmation
+                    if (chunks.length > 1) {
+                        new Notice(`🎉 Chunk ${i + 1} successfully processed! Moving forward...`);
+                    }
                 } catch (error) {
                     if (error instanceof DeepInsightAIError && error.type === 'Network') {
-                        new Notice('Network error: Please check your connection', 5000);
+                        new Notice('📡 Network error: Please check your connection', 5000);
                         return;
                     }
                     throw error;
                 }
             }
-
-            // Second pass: Combine all results
+    
+            // Second pass: Combine results with engaging message
             if (chunkResults.length > 0) {
-                new Notice('Combining results...');
+                if (chunkResults.length > 1) {
+                    new Notice('🧩 Merging insights together into a cohesive narrative...');
+                }
                 const finalTasks = await this.combineChunkResults(chunkResults);
                 await this.insertTasks(editor, finalTasks);
-                new Notice('Tasks generated and combined successfully!', 5000);
+                new Notice('✨ Deep insights successfully crystallized.', 5000);
             }
             
         } catch (error) {
@@ -518,6 +475,7 @@ export default class DeepInsightAI extends Plugin {
             return chunkResults[0];
         }
     
+        new Notice('🎭 Harmonizing multiple perspectives...');
         const combinedContent = chunkResults.join('\n\n=== Next Chunk ===\n\n');
         const combinationPrompt = await this.getPromptFromNote(this.settings.combinationPromptPath);
         
@@ -668,19 +626,22 @@ export default class DeepInsightAI extends Plugin {
         const cursor = editor.getCursor();
         
         switch (this.settings.insertPosition) {
-            case 'top':
+            case 'top': {
                 editor.replaceRange(`## Generated Tasks\n${tasks}\n\n`, { line: 0, ch: 0 });
                 break;
-            case 'bottom':
+            }
+            case 'bottom': {
                 const lastLine = editor.lastLine();
                 editor.replaceRange(
                     `\n\n## Generated Tasks\n${tasks}`, 
                     { line: lastLine, ch: editor.getLine(lastLine).length }
                 );
                 break;
-            case 'cursor':
+            }
+            case 'cursor': {
                 editor.replaceRange(`\n\n## Generated Tasks\n${tasks}\n`, cursor);
                 break;
+            }
         }
     }
 }
@@ -743,7 +704,7 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                 text: '×'
             });
             removeButton.addEventListener('click', async () => {
-                const settings = this.plugin.settings as any;
+                const settings = this.plugin.settings as DeepInsightAISettings;
                 settings[pathSetting] = '';
                 await this.plugin.saveSettings();
                 this.display(); // Refresh the settings tab
@@ -791,7 +752,7 @@ class DeepInsightAISettingTab extends PluginSettingTab {
         textarea.placeholder = notePath ? 'Default prompt (used as fallback)' : 'Enter default prompt';
         textarea.addEventListener('change', async (e) => {
             const target = e.target as HTMLTextAreaElement;
-            const settings = this.plugin.settings as any;
+            const settings = this.plugin.settings as DeepInsightAISettings;
             settings[defaultSetting] = target.value;
             await this.plugin.saveSettings();
         });
