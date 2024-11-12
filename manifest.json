@@ -5,6 +5,7 @@
     "minAppVersion": "0.15.0",
     "description": "Generate insights from your Obsidian notes using AI",
     "author": "Radek Maciaszek",
-    "isDesktopOnly": false
+    "isDesktopOnly": false,
+    "css": ["styles.css"]
 }
 

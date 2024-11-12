@@ -1,4 +1,6 @@
 import { App, Editor, Notice, Plugin, PluginSettingTab, Setting, TFile, SuggestModal, requestUrl } from 'obsidian';
+import { DEFAULT_PROMPTS } from './defaultPrompts';
+import { CostTracker } from './costTracker';
 
 type InsertPosition = 'top' | 'bottom' | 'cursor';
 type AnthropicModel = 'claude-3-5-sonnet-latest' | 'claude-3-5-haiku-latest';
@@ -16,6 +18,13 @@ interface DeepInsightAISettings {
     defaultUserPrompt: string;
     defaultCombinationPrompt: string;
     retryAttempts: number;
+    showCostSummary: boolean;
+    testMode: {
+        enabled: boolean;
+        maxFiles?: number;
+        maxTokens?: number;
+    };
+    showAdvancedSettings: boolean;
 }
 
 const DEFAULT_SETTINGS: DeepInsightAISettings = {
@@ -27,30 +36,17 @@ const DEFAULT_SETTINGS: DeepInsightAISettings = {
     excludeFolders: ['templates', 'archive'],
     maxTokensPerRequest: 90000,
     insertPosition: 'cursor',
-    defaultSystemPrompt: `You are a task extraction assistant. When analyzing notes:
-1. Consider the note's folder path as context for task importance and categorization
-2. Extract actionable tasks from the content
-3. For each task include:
-   - Source file path in parentheses
-   - Relevant context based on the folder structure
-4. Format tasks as:
-   - [ ] Task description (Source: path/to/note) #folder-name
-
-Group tasks by their source folders to maintain organizational context.`,
-    defaultUserPrompt: 'Please analyze these notes and create a prioritized list of tasks.',
-    defaultCombinationPrompt: `You are receiving multiple sets of extracted tasks from different chunks of notes. Your job is to:
-
-1. Review all tasks across chunks
-2. Remove any duplicates
-3. Combine similar tasks
-4. Organize tasks by their folders/categories
-5. Ensure proper formatting is maintained
-6. Keep all source file references
-7. Maintain any priority indicators or context
-8. Create a cohesive, well-structured final output
-
-Here are the tasks from different chunks to combine:`,
-    retryAttempts: 2
+    defaultSystemPrompt: DEFAULT_PROMPTS.system,
+    defaultUserPrompt: DEFAULT_PROMPTS.user,
+    defaultCombinationPrompt: DEFAULT_PROMPTS.combination,
+    retryAttempts: 2,
+    showCostSummary: true,
+    testMode: {
+        enabled: false,
+        maxFiles: 5,
+        maxTokens: 1000
+    },
+    showAdvancedSettings: false,
 };
 
 interface AnthropicMessage {
@@ -85,6 +81,63 @@ function isAnthropicModel(value: string): value is AnthropicModel {
 
 function isInsertPosition(value: string): value is InsertPosition {
     return value === 'top' || value === 'bottom' || value === 'cursor';
+}
+
+class TestModeManager {
+    private static instance: TestModeManager;
+    private constructor() {}
+
+    static getInstance(): TestModeManager {
+        if (!TestModeManager.instance) {
+            TestModeManager.instance = new TestModeManager();
+        }
+        return TestModeManager.instance;
+    }
+
+    isTestModeEnabled(settings: DeepInsightAISettings): boolean {
+        return settings.testMode.enabled;
+    }
+
+    applyTestLimits(files: TFile[], settings: DeepInsightAISettings): TFile[] {
+        if (!this.isTestModeEnabled(settings)) {
+            return files;
+        }
+
+        console.log('Deep Insight AI: Test Mode Active');
+        
+        // If maxFiles is set, limit the number of files
+        if (settings.testMode.maxFiles) {
+            const limitedFiles = files.slice(0, settings.testMode.maxFiles);
+            console.log(`Deep Insight AI: Limited to ${limitedFiles.length} files for testing`);
+            return limitedFiles;
+        }
+
+        return files;
+    }
+
+    applyTokenLimit(content: string, settings: DeepInsightAISettings): string {
+        if (!this.isTestModeEnabled(settings) || !settings.testMode.maxTokens) {
+            return content;
+        }
+
+        // Rough estimation: 1 token ≈ 4 characters
+        const estimatedCurrentTokens = Math.ceil(content.length / 4);
+        if (estimatedCurrentTokens <= settings.testMode.maxTokens) {
+            return content;
+        }
+
+        // Calculate approximate character limit
+        const charLimit = settings.testMode.maxTokens * 4;
+        const truncatedContent = content.slice(0, charLimit);
+        
+        console.log('Deep Insight AI: Content truncated for testing', {
+            originalTokens: estimatedCurrentTokens,
+            truncatedTokens: settings.testMode.maxTokens,
+            reduction: `${Math.round((1 - settings.testMode.maxTokens / estimatedCurrentTokens) * 100)}%`
+        });
+
+        return truncatedContent + '\n\n[Content truncated for testing]';
+    }
 }
 
 class NetworkStatusChecker {
@@ -134,10 +187,10 @@ class PromptNotesModal extends SuggestModal<TFile> {
         app: App,
         private plugin: DeepInsightAI,
         private onError: (error: Error) => void,
-        private promptType: 'systemPromptPath' | 'userPromptPath' | 'combinationPromptPath'
+        private promptType: 'systemPromptPath' | 'userPromptPath' | 'combinationPromptPath',
+        private onSelect?: () => void  // Add callback for selection
     ) {
         super(app);
-        // Set a more descriptive placeholder for the search input
         this.setPlaceholder('Type to search notes by title or path...');
     }
 
@@ -146,10 +199,8 @@ class PromptNotesModal extends SuggestModal<TFile> {
         const excludedFolders = this.plugin.settings.excludeFolders;
         
         const filtered = files
-            // Filter out excluded folders
             .filter(file => !excludedFolders
                 .some(folder => file.path.toLowerCase().startsWith(folder.toLowerCase())))
-            // Filter based on search query
             .filter(file => {
                 if (!query) {
                     return true;
@@ -158,10 +209,8 @@ class PromptNotesModal extends SuggestModal<TFile> {
                 const searchString = `${file.basename} ${file.path}`.toLowerCase();
                 const queries = query.toLowerCase().split(' ');
                 
-                // Match all space-separated terms
                 return queries.every(query => searchString.contains(query));
             })
-            // Sort by path for better organization
             .sort((a, b) => a.path.localeCompare(b.path));
 
         return filtered;
@@ -170,20 +219,17 @@ class PromptNotesModal extends SuggestModal<TFile> {
     renderSuggestion(file: TFile, el: HTMLElement): void {
         const container = el.createDiv({ cls: 'deep-insight-ai-file-suggestion' });
         
-        // Add file icon
         container.createEl('span', {
             cls: 'nav-file-title-content',
             text: '📄 '
         });
         
-        // File name in bold
         container.createEl('span', { 
             cls: 'deep-insight-ai-file-name',
             text: file.basename,
             attr: { style: 'font-weight: bold;' }
         });
         
-        // Show path in muted color
         const pathText = file.parent ? ` (${file.parent.path})` : '';
         if (pathText) {
             container.createEl('span', { 
@@ -196,19 +242,22 @@ class PromptNotesModal extends SuggestModal<TFile> {
 
     async onChooseSuggestion(file: TFile): Promise<void> {
         try {
-            // Update the appropriate prompt path based on type
             const settings = this.plugin.settings as DeepInsightAISettings;
             settings[this.promptType] = file.path;
             
             await this.plugin.saveSettings();
             
-            // Show success notice
             const promptTypes = {
                 systemPromptPath: 'System',
                 userPromptPath: 'User',
                 combinationPromptPath: 'Combination'
             };
             new Notice(`${promptTypes[this.promptType]} prompt set to: ${file.basename}`);
+
+            // Call the onSelect callback if provided
+            if (this.onSelect) {
+                this.onSelect();
+            }
             
         } catch (error) {
             this.onError(new DeepInsightAIError(
@@ -256,10 +305,14 @@ export default class DeepInsightAI extends Plugin {
     settings!: DeepInsightAISettings;
     private networkStatus!: NetworkStatusChecker;
     private isProcessing = false;
+    private costTracker: CostTracker | undefined;
 
     async onload(): Promise<void> {
         await this.loadSettings();
         this.networkStatus = NetworkStatusChecker.getInstance();
+        
+        // Load styles
+        this.loadStyles();
         
         this.addCommand({
             id: 'generate-insights',
@@ -273,9 +326,32 @@ export default class DeepInsightAI extends Plugin {
     
         this.networkStatus.addListener(this.handleNetworkChange.bind(this));
     }
+    
+    private loadStyles(): void {
+        // Add the styles element
+        const styleEl = document.createElement('style');
+        styleEl.id = 'deep-insight-ai-styles';
+        document.head.appendChild(styleEl);
+        
+        // Load the CSS file
+        const cssFile = this.app.vault.adapter.read(
+            this.app.vault.configDir + '/plugins/deep-insight-ai/styles.css'
+        ).then(css => {
+            styleEl.textContent = css;
+        }).catch(error => {
+            console.error('Failed to load DeepInsight AI styles:', error);
+        });
+    }
 
     onunload(): void {
+        // Remove network listener
         this.networkStatus.removeListener(this.handleNetworkChange.bind(this));
+        
+        // Remove styles
+        const styleEl = document.getElementById('deep-insight-ai-styles');
+        if (styleEl) {
+            styleEl.remove();
+        }
     }
 
     private handleNetworkChange(online: boolean): void {
@@ -357,6 +433,14 @@ export default class DeepInsightAI extends Plugin {
                 const elapsed = Math.floor((Date.now() - startTime) / 1000);
                 waitingNotice.setMessage(`🤔 Processing... (${elapsed}s)`);
             }, 1000);
+
+            // Track input tokens before making request
+            if (this.costTracker) {
+                const systemPromptTokens = CostTracker.estimateTokens(systemPrompt);
+                const userPromptTokens = CostTracker.estimateTokens(userPrompt);
+                const contentTokens = CostTracker.estimateTokens(content);
+                this.costTracker.addInputTokens(systemPromptTokens + userPromptTokens + contentTokens);
+            }
     
             const response = await requestUrl({
                 url: 'https://api.anthropic.com/v1/messages',
@@ -370,6 +454,15 @@ export default class DeepInsightAI extends Plugin {
                 body: JSON.stringify(requestBody),
                 throw: false
             });
+
+            // Track output tokens after receiving response
+            if (this.costTracker) {
+                const responseData: AnthropicResponse = JSON.parse(response.text);
+                if (responseData.content?.[0]?.text) {
+                    const outputTokens = CostTracker.estimateTokens(responseData.content[0].text);
+                    this.costTracker.addOutputTokens(outputTokens);
+                }
+            }
 
             // Clear the waiting notice and interval
             clearInterval(updateInterval);
@@ -439,7 +532,8 @@ export default class DeepInsightAI extends Plugin {
                 new Notice('Please set your Anthropic API key in the plugin settings');
                 return;
             }
-    
+            
+            this.costTracker = new CostTracker(this.settings.model);
             new Notice('🔍 Starting your knowledge journey...');
             
             const chunks = await this.getAllNotesContent();
@@ -485,7 +579,14 @@ export default class DeepInsightAI extends Plugin {
                 }
                 const finalTasks = await this.combineChunkResults(chunkResults);
                 await this.insertTasks(editor, finalTasks);
-                new Notice('✨ Deep insights successfully crystallized.', 5000);
+    
+                // Create success message with optional cost
+                let successMessage = '✨ Deep insights successfully crystallized.';
+                if (this.settings.showCostSummary && this.costTracker) {
+                    const { details } = this.costTracker.calculateCost();
+                    successMessage += `\n\n${details}`;
+                }
+                const notice = new Notice(successMessage, 7000);
             }
             
         } catch (error) {
@@ -598,11 +699,16 @@ export default class DeepInsightAI extends Plugin {
             responseTokens: RESPONSE_TOKENS,
             availableForContent: MAX_CHUNK_SIZE
         });
+
+        const testManager = TestModeManager.getInstance();
     
-        const files = this.app.vault.getMarkdownFiles()
-            .filter(file => !this.settings.excludeFolders
-                .some(folder => file.path.toLowerCase().startsWith(folder.toLowerCase())));
-    
+        const files = testManager.applyTestLimits(
+            this.app.vault.getMarkdownFiles()
+                .filter(file => !this.settings.excludeFolders
+                    .some(folder => file.path.toLowerCase().startsWith(folder.toLowerCase()))),
+            this.settings
+        );
+
         const chunks: { content: string, size: number }[] = [];
         let currentChunk = '';
         let currentSize = 0;
@@ -659,6 +765,11 @@ export default class DeepInsightAI extends Plugin {
                 percentOfLimit: Math.round((totalEstimatedTokens / this.settings.maxTokensPerRequest) * 100) + '%'
             });
         });
+
+        return chunks.map(chunk => ({
+            content: testManager.applyTokenLimit(chunk.content, this.settings),
+            size: chunk.size
+        }));
     
         return chunks;
     }
@@ -689,56 +800,70 @@ export default class DeepInsightAI extends Plugin {
 
 class DeepInsightAISettingTab extends PluginSettingTab {
     plugin: DeepInsightAI;
+    private advancedSettingsEl: HTMLElement | null = null;
 
     constructor(app: App, plugin: DeepInsightAI) {
         super(app, plugin);
         this.plugin = plugin;
     }
 
-    private createPromptSection(
+    private async createPromptSection(
         containerEl: HTMLElement,
         title: string,
         description: string,
         pathSetting: 'systemPromptPath' | 'userPromptPath' | 'combinationPromptPath',
         defaultSetting: 'defaultSystemPrompt' | 'defaultUserPrompt' | 'defaultCombinationPrompt'
-    ): void {
+    ): Promise<void> {
         const container = containerEl.createDiv({
             cls: 'deep-insight-ai-prompt-container'
         });
-
+    
         container.createEl('h4', { text: title });
         container.createEl('p', { 
             text: description,
             cls: 'setting-item-description'
         });
-
-        // Create note link section if a note is selected
+    
         const notePath = this.plugin.settings[pathSetting];
+        let noteContent = '';
+    
+        // If a note is selected, try to read its content
+        if (notePath) {
+            try {
+                const file = this.app.vault.getAbstractFileByPath(notePath);
+                if (file instanceof TFile) {
+                    noteContent = await this.app.vault.read(file);
+                }
+            } catch (error) {
+                console.error(`Failed to read prompt note: ${error}`);
+                new Notice(`Failed to read prompt note: ${error}`);
+            }
+        }
+    
         if (notePath) {
             const linkContainer = container.createDiv({
                 cls: 'deep-insight-ai-note-link'
             });
-
-            // Add note icon
+    
             linkContainer.createEl('span', {
                 cls: 'setting-editor-extra-setting-button',
                 text: '📝'
             });
-
-            // Create link to the note
+    
             const link = linkContainer.createEl('a');
             link.textContent = notePath;
-            link.addEventListener('click', (e) => {
+            link.addEventListener('click', async (e) => {
                 e.preventDefault();
                 const file = this.app.vault.getAbstractFileByPath(notePath);
                 if (file instanceof TFile) {
                     const leaf = this.app.workspace.getLeaf();
                     if (leaf) {
-                        leaf.openFile(file);
+                        await leaf.openFile(file);
+                        new Notice('📝 Prompt opened in the background');
                     }
                 }
             });
-
+    
             // Add remove button
             const removeButton = linkContainer.createEl('span', {
                 cls: 'deep-insight-ai-note-link-remove',
@@ -751,20 +876,45 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                 this.display(); // Refresh the settings tab
                 new Notice(`${title} note removed`);
             });
-
-            // Show that we're using the custom note
+    
+            // Add reset button
+            const resetButton = linkContainer.createEl('button', {
+                cls: 'deep-insight-ai-reset-button',
+                text: 'Reset to Default'
+            });
+            // Add reset button
+            resetButton.addEventListener('click', async () => {
+                const settings = this.plugin.settings as DeepInsightAISettings;
+                settings[pathSetting] = '';
+                
+                // Map the settings key to the DEFAULT_PROMPTS key
+                const promptTypeMap = {
+                    'defaultSystemPrompt': 'system',
+                    'defaultUserPrompt': 'user',
+                    'defaultCombinationPrompt': 'combination'
+                } as const;
+                
+                const defaultPromptKey = promptTypeMap[defaultSetting as keyof typeof promptTypeMap];
+                if (defaultPromptKey) {
+                    settings[defaultSetting] = DEFAULT_PROMPTS[defaultPromptKey];
+                }
+                
+                await this.plugin.saveSettings();
+                this.display(); // Refresh the settings tab
+                new Notice(`${title} reset to default`);
+            });
+    
             container.createEl('div', {
                 cls: 'deep-insight-ai-prompt-source',
                 text: 'Using custom prompt from the linked note'
             });
         } else {
-            // Show that we're using the default prompt
             container.createEl('div', {
                 cls: 'deep-insight-ai-prompt-source',
                 text: 'Using default prompt (no note selected)'
             });
         }
-
+    
         // Add button to select a new note
         new Setting(container)
             .addButton(button => button
@@ -776,26 +926,43 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                         (error) => {
                             new Notice(`Failed to set prompt note: ${error.message}`);
                         },
-                        pathSetting
+                        pathSetting,
+                        () => {
+                            // Refresh the settings display after selection
+                            this.display();
+                        }
                     ).open();
                 }));
-
-        // Show default prompt textarea
-        const textarea = container.createEl('textarea', {
+    
+        const promptContainer = container.createDiv({
+            cls: 'deep-insight-ai-prompt-textarea-container'
+        });
+    
+        if (notePath) {
+            promptContainer.createEl('div', {
+                cls: 'deep-insight-ai-prompt-message',
+                text: '💡 This prompt is managed through the linked note above. Click the note link to edit.'
+            });
+        }
+    
+        const textarea = promptContainer.createEl('textarea', {
             cls: 'deep-insight-ai-prompt-textarea'
         });
-        
-        const defaultValue = this.plugin.settings[defaultSetting];
-        if (typeof defaultValue === 'string') {
-            textarea.value = defaultValue;
-        }
-        
-        textarea.placeholder = notePath ? 'Default prompt (used as fallback)' : 'Enter default prompt';
+    
+        // Set textarea value based on whether we have a linked note or default
+        textarea.value = notePath ? noteContent : this.plugin.settings[defaultSetting];
+        textarea.disabled = !!notePath;
+        textarea.placeholder = notePath 
+            ? 'This prompt is managed through the linked note. Click the note link above to edit.'
+            : 'Enter default prompt';
+    
         textarea.addEventListener('change', async (e) => {
-            const target = e.target as HTMLTextAreaElement;
-            const settings = this.plugin.settings as DeepInsightAISettings;
-            settings[defaultSetting] = target.value;
-            await this.plugin.saveSettings();
+            if (!notePath) {  // Only allow changes when no note is linked
+                const target = e.target as HTMLTextAreaElement;
+                const settings = this.plugin.settings as DeepInsightAISettings;
+                settings[defaultSetting] = target.value;
+                await this.plugin.saveSettings();
+            }
         });
     }
 
@@ -803,44 +970,56 @@ class DeepInsightAISettingTab extends PluginSettingTab {
         const {containerEl} = this;
         containerEl.empty();
 
-        // Add CSS for styling
-        containerEl.createEl('style', {
-            text: `
-                .deep-insight-ai-prompt-textarea {
-                    min-height: 200px !important;
-                    width: 100%;
-                    font-family: monospace;
-                }
-                .deep-insight-ai-prompt-container {
-                    margin-bottom: 24px;
-                }
-                .deep-insight-ai-note-link {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    margin-bottom: 12px;
-                    padding: 8px;
-                    background: var(--background-secondary);
-                    border-radius: 4px;
-                }
-                .deep-insight-ai-note-link a {
-                    color: var(--text-accent);
-                    text-decoration: underline;
-                }
-                .deep-insight-ai-note-link-remove {
-                    color: var(--text-error);
-                    cursor: pointer;
-                    padding: 4px;
-                }
-                .deep-insight-ai-prompt-source {
-                    font-size: 0.9em;
-                    color: var(--text-muted);
-                    margin-bottom: 8px;
-                    font-style: italic;
-                }
-            `
+        // Regular settings...
+        this.displayBasicSettings(containerEl);
+
+        // Advanced Settings Section with improved header
+        const advancedHeader = containerEl.createEl('div', { 
+            cls: 'deep-insight-ai-advanced-header'
         });
 
+        // Create header content
+        advancedHeader.createEl('h3', { 
+            text: 'Advanced Settings',
+            cls: 'deep-insight-ai-advanced-title'
+        });
+
+        // Add chevron icon
+        const chevron = advancedHeader.createEl('span', {
+            cls: `deep-insight-ai-advanced-chevron ${this.plugin.settings.showAdvancedSettings ? 'open' : ''}`
+        });
+
+        // Create advanced section container
+        this.advancedSettingsEl = containerEl.createDiv({
+            cls: 'deep-insight-ai-advanced-section'
+        });
+
+        // Make header clickable
+        advancedHeader.addEventListener('click', async () => {
+            this.plugin.settings.showAdvancedSettings = !this.plugin.settings.showAdvancedSettings;
+            await this.plugin.saveSettings();
+            
+            // Toggle chevron and section visibility without full rebuild
+            chevron.classList.toggle('open');
+            if (this.advancedSettingsEl) {
+                if (this.plugin.settings.showAdvancedSettings) {
+                    this.advancedSettingsEl.style.display = 'block';
+                    this.displayAdvancedSettings(this.advancedSettingsEl);
+                } else {
+                    this.advancedSettingsEl.style.display = 'none';
+                }
+            }
+        });
+
+        // Initialize advanced section
+        if (this.plugin.settings.showAdvancedSettings) {
+            this.displayAdvancedSettings(this.advancedSettingsEl);
+        } else {
+            this.advancedSettingsEl.style.display = 'none';
+        }
+    }
+
+    private displayBasicSettings(containerEl: HTMLElement): void {
         // API Key Setting
         new Setting(containerEl)
             .setName('Anthropic API Key')
@@ -860,7 +1039,7 @@ class DeepInsightAISettingTab extends PluginSettingTab {
             .addDropdown(dropdown => {
                 const options = {
                     'claude-3-5-sonnet-latest': 'Claude 3.5 Sonnet (Balanced)',
-                    'claude-3-5-haiku-latest': 'Claude 3.5 Haiku (Fast)'
+                    'claude-3-5-haiku-latest': 'Claude 3.5 Haiku (Cheap)'
                 };
                 
                 dropdown
@@ -875,6 +1054,17 @@ class DeepInsightAISettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     });
             });
+        
+        // Add cost summary setting
+        new Setting(containerEl)
+        .setName('Show Cost Summary')
+        .setDesc('Display estimated cost after generating insights')
+        .addToggle(toggle => toggle
+            .setValue(this.plugin.settings.showCostSummary)
+            .onChange(async (value) => {
+                this.plugin.settings.showCostSummary = value;
+                await this.plugin.saveSettings();
+            }));
 
         // Insert Position Setting
         new Setting(containerEl)
@@ -941,5 +1131,96 @@ class DeepInsightAISettingTab extends PluginSettingTab {
             'combinationPromptPath',
             'defaultCombinationPrompt'
         );
+    }
+
+    private displayAdvancedSettings(containerEl: HTMLElement): void {
+        containerEl.empty();
+
+        // Add description for advanced settings
+        containerEl.createEl('p', {
+            text: 'Advanced settings are for development and testing purposes. Use with caution.',
+            cls: 'deep-insight-ai-advanced-description'
+        });
+
+        // Test Mode Settings
+        const testModeContainer = containerEl.createDiv('test-mode-settings');
+        
+        new Setting(testModeContainer)
+            .setName('Test Mode')
+            .setDesc('Limit processing for testing and development purposes')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.testMode.enabled)
+                .onChange(async (value) => {
+                    this.plugin.settings.testMode.enabled = value;
+                    await this.plugin.saveSettings();
+                    
+                    // Only update the test mode options visibility
+                    const testModeOptions = testModeContainer.querySelector('.test-mode-options') as HTMLElement;
+                    if (testModeOptions) {
+                        testModeOptions.style.display = value ? 'block' : 'none';
+                    }
+                }));
+
+        // Create container for test mode options
+        const testModeOptions = testModeContainer.createDiv({
+            cls: 'test-mode-options',
+            attr: {
+                style: this.plugin.settings.testMode.enabled ? 'display: block' : 'display: none'
+            }
+        });
+
+        // Test mode options
+        new Setting(testModeOptions)
+            .setName('Maximum Files')
+            .setDesc('Maximum number of files to process in test mode (0 for no limit)')
+            .addText(text => text
+                .setPlaceholder('5')
+                .setValue(String(this.plugin.settings.testMode.maxFiles || ''))
+                .onChange(async (value) => {
+                    const numValue = parseInt(value);
+                    this.plugin.settings.testMode.maxFiles = isNaN(numValue) ? undefined : numValue;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(testModeOptions)
+            .setName('Maximum Tokens')
+            .setDesc('Maximum tokens per request in test mode (0 for no limit)')
+            .addText(text => text
+                .setPlaceholder('1000')
+                .setValue(String(this.plugin.settings.testMode.maxTokens || ''))
+                .onChange(async (value) => {
+                    const numValue = parseInt(value);
+                    this.plugin.settings.testMode.maxTokens = isNaN(numValue) ? undefined : numValue;
+                    await this.plugin.saveSettings();
+                }));
+
+        // Other advanced settings...
+        new Setting(containerEl)
+            .setName('Retry Attempts')
+            .setDesc('Number of times to retry failed API requests')
+            .addText(text => text
+                .setPlaceholder('2')
+                .setValue(String(this.plugin.settings.retryAttempts))
+                .onChange(async (value) => {
+                    const numValue = parseInt(value);
+                    if (!isNaN(numValue) && numValue >= 0) {
+                        this.plugin.settings.retryAttempts = numValue;
+                        await this.plugin.saveSettings();
+                    }
+                }));
+
+        new Setting(containerEl)
+            .setName('Maximum Tokens Per Request')
+            .setDesc('Maximum tokens to process in a single API request')
+            .addText(text => text
+                .setPlaceholder('90000')
+                .setValue(String(this.plugin.settings.maxTokensPerRequest))
+                .onChange(async (value) => {
+                    const numValue = parseInt(value);
+                    if (!isNaN(numValue) && numValue > 0) {
+                        this.plugin.settings.maxTokensPerRequest = numValue;
+                        await this.plugin.saveSettings();
+                    }
+                }));
     }
 }

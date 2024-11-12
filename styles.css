@@ -1,0 +1,133 @@
+/* General Prompt Styling */
+.deep-insight-ai-prompt-textarea {
+    min-height: 200px !important;
+    width: 100%;
+    font-family: monospace;
+}
+
+.deep-insight-ai-prompt-container {
+    margin-bottom: 24px;
+}
+
+/* Note Link Styling */
+.deep-insight-ai-note-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: var(--background-secondary);
+    border-radius: 4px;
+}
+
+.deep-insight-ai-note-link a {
+    color: var(--text-accent);
+    text-decoration: underline;
+}
+
+.deep-insight-ai-note-link-remove {
+    color: var(--text-error);
+    cursor: pointer;
+    padding: 4px;
+}
+
+/* Source Indicator */
+.deep-insight-ai-prompt-source {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-style: italic;
+}
+
+/* Reset Button */
+.deep-insight-ai-reset-button {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.deep-insight-ai-reset-button:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+/* Prompt Textarea Container */
+.deep-insight-ai-prompt-textarea-container {
+    margin-top: 12px;
+}
+
+/* Prompt Message */
+.deep-insight-ai-prompt-message {
+    margin-bottom: 8px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Disabled Textarea */
+.deep-insight-ai-prompt-textarea:disabled {
+    background-color: var(--background-secondary);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Advanced Settings Section */
+.deep-insight-ai-advanced-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 2rem;
+    padding: 12px 16px;
+    border-radius: 4px;
+    background-color: var(--background-secondary);
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.deep-insight-ai-advanced-header:hover {
+    background-color: var(--background-secondary-alt);
+}
+
+.deep-insight-ai-advanced-title {
+    margin: 0;
+    font-size: 1.1em;
+}
+
+.deep-insight-ai-advanced-chevron::after {
+    content: '▼';
+    display: inline-block;
+    font-size: 0.9em;
+    transition: transform 0.2s ease;
+}
+
+.deep-insight-ai-advanced-chevron.open::after {
+    transform: rotate(180deg);
+}
+
+.deep-insight-ai-advanced-description {
+    margin: 1rem 0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background-color: var(--background-primary-alt);
+    font-size: 0.9em;
+    color: var(--text-muted);
+}
+
+.deep-insight-ai-advanced-section {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.test-mode-settings {
+    margin-bottom: 1.5rem;
+}
+
+.test-mode-options {
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--background-modifier-border);
+}
