@@ -334,7 +334,7 @@ export default class DeepInsightAI extends Plugin {
         document.head.appendChild(styleEl);
         
         // Load the CSS file
-        const cssFile = this.app.vault.adapter.read(
+        this.app.vault.adapter.read(
             this.app.vault.configDir + '/plugins/deep-insight-ai/styles.css'
         ).then(css => {
             styleEl.textContent = css;
@@ -534,23 +534,6 @@ export default class DeepInsightAI extends Plugin {
             }
             
             this.costTracker = new CostTracker(this.settings.model);
-    
-            // Get prompts for size calculations
-            const systemPrompt = await this.getPromptFromNote(this.settings.systemPromptPath) || this.settings.defaultSystemPrompt;
-            const userPrompt = await this.getPromptFromNote(this.settings.userPromptPath) || this.settings.defaultUserPrompt;
-    
-            // Calculate reserved tokens
-            const systemPromptSize = Math.ceil(systemPrompt.length / 3);
-            const userPromptSize = Math.ceil(userPrompt.length / 3);
-            const RESPONSE_TOKENS = 10000;
-            const RESERVED_TOKENS = systemPromptSize + userPromptSize + RESPONSE_TOKENS;
-            const MAX_CHUNK_SIZE = this.settings.maxTokensPerRequest - RESERVED_TOKENS;
-            const MAX_CHUNK_CHARS = MAX_CHUNK_SIZE * 3;
-    
-            // Get filtered files
-            const files = this.app.vault.getMarkdownFiles()
-                .filter(file => !this.settings.excludeFolders
-                    .some(folder => file.path.toLowerCase().startsWith(folder.toLowerCase())));
     
             new Notice('🔍 Starting your knowledge journey...');
             
