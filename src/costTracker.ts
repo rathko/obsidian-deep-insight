@@ -63,7 +63,7 @@ export class CostTracker {
         const details = `Cost Summary:
 • Input: ${this.inputTokens.toLocaleString()} tokens
 • Output: ${this.outputTokens.toLocaleString()} tokens
-• Total cost: $${total.toFixed(4)}`;
+• Total estimated cost: $${total.toFixed(4)}`;
 
         return { total, details };
     }
@@ -77,7 +77,7 @@ export class CostTracker {
     }
 
     static estimateTokens(text: string): number {
-        // Rough estimation: ~3 characters per token
-        return Math.ceil(text.length / 3);
+        // Rough estimation: ~4 characters per token
+        return Math.ceil(text.length / 4);
     }
 }

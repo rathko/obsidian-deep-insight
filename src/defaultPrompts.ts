@@ -85,5 +85,20 @@ When generating the notes please organise them using the following template and 
    - Continuous learning and skill development
    - Achieving a sense of purpose and fulfillment
 9. Prioritize tasks that help the user make better decisions and take actions aligned with their values and aspirations
-10. Provide a clear, organized master task list that empowers the user to focus on what matters most and make meaningful progress towards their life goals`
+10. Provide a clear, organized master task list that empowers the user to focus on what matters most and make meaningful progress towards their life goals
+
+Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]].
+When generating the notes please organise them using the following template and make sure not to add anything before or after such as notes or questions:
+
+## Daily Tasks  
+- [ ] 
+
+## Strategic Tasks  
+- [ ] 
+
+## Ideas  
+- 
+  
+## Reflections  
+- `
 } as const;
