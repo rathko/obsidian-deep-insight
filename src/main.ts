@@ -25,9 +25,21 @@ const UI_MESSAGES = {
     NETWORK_ERROR: '📡 Network error: Please check your connection'
 } as const;
 
-// Types
-type InsertPosition = 'top' | 'bottom' | 'cursor';
-type AnthropicModel = 'claude-3-5-sonnet-latest' | 'claude-3-5-haiku-latest';
+const InsertPositionEnum = {
+    top: 'top',
+    bottom: 'bottom',
+    cursor: 'cursor'
+} as const;
+
+const AnthropicModelEnum = {
+    sonnet: 'claude-3-5-sonnet-latest',
+    haiku: 'claude-3-5-haiku-latest'
+} as const;
+
+// Derive types from the enum values
+type InsertPosition = typeof InsertPositionEnum[keyof typeof InsertPositionEnum];
+type AnthropicModel = typeof AnthropicModelEnum[keyof typeof AnthropicModelEnum];
+
 type ErrorType = 'API' | 'File' | 'Settings' | 'Processing' | 'Network';
 
 interface DeepInsightAISettings {
@@ -189,7 +201,7 @@ class ContentChunker {
 
     constructor(
         private readonly maxTokensPerRequest: number,
-        private readonly charsPerToken: number = 4
+        private readonly charsPerToken: number = API_CONSTANTS.CHARS_PER_TOKEN
     ) {}
 
     private calculateMaxContentTokens(): number {
@@ -359,94 +371,14 @@ class ContentProcessor {
         return chunker.createChunks(files, this.vault);
     }
 
-    private async getPrompts(): Promise<{ systemPrompt: string; userPrompt: string }> {
-        const systemPrompt = await this.getPromptContent(this.settings.systemPromptPath) || 
-                            this.settings.defaultSystemPrompt;
-        const userPrompt = await this.getPromptContent(this.settings.userPromptPath) || 
-                          this.settings.defaultUserPrompt;
-        return { systemPrompt, userPrompt };
-    }
-
-    private async getPromptContent(path: string): Promise<string | null> {
-        if (!path) {
-            return null;
-        }
-        try {
-            const file = this.vault.getAbstractFileByPath(path);
-            return file instanceof TFile ? await this.vault.read(file) : null;
-        } catch {
-            return null;
-        }
-    }
-
-    private calculateMaxChunkSize(systemPrompt: string, userPrompt: string): number {
-        const reservedTokens = Math.ceil(
-            (systemPrompt.length + userPrompt.length) / API_CONSTANTS.CHARS_PER_TOKEN + 
-            API_CONSTANTS.RESPONSE_TOKENS
-        );
-        return (this.settings.maxTokensPerRequest - reservedTokens) * API_CONSTANTS.CHARS_PER_TOKEN;
-    }
-
     private getFilteredFiles(): TFile[] {
         return this.vault.getMarkdownFiles()
             .filter((file: TFile) => !this.settings.excludeFolders
                 .some(folder => file.path.toLowerCase().startsWith(folder.toLowerCase())));
     }
 
-    private async createContentChunks(files: TFile[], maxChunkSize: number): Promise<{ content: string; size: number }[]> {
-        const chunks: { content: string; size: number }[] = [];
-        let currentChunk = '';
-        let currentSize = 0;
-
-        for (const file of files) {
-            try {
-                const content = await this.vault.read(file);
-                const noteContent = this.formatNoteContent(file, content);
-                
-                if (currentSize + noteContent.length > maxChunkSize && currentChunk) {
-                    chunks.push({ content: currentChunk, size: currentSize });
-                    currentChunk = '';
-                    currentSize = 0;
-                }
-
-                currentChunk += noteContent;
-                currentSize += noteContent.length;
-            } catch (error) {
-                new Notice(`Failed to read file ${file.path}`);
-                console.error(`Error reading file ${file.path}:`, error);
-            }
-        }
-
-        if (currentChunk) {
-            chunks.push({ content: currentChunk, size: currentSize });
-        }
-
-        if (chunks.length === 0) {
-            throw new DeepInsightAIError('No valid notes found to process', 'Processing');
-        }
-
-        return chunks.map(chunk => ({
-            content: this.testManager.applyTokenLimit(chunk.content, this.settings),
-            size: chunk.size
-        }));
-    }
-
-    private formatNoteContent(file: TFile, content: string): string {
-        const folderPath = file.path.substring(0, file.path.lastIndexOf('/'));
-        return `
-=== Note Path: ${file.path} ===
-Folder: ${folderPath || 'root'}
-
-Content:
-${content}
-
-=== End Note ===
-
-`;
-    }
 }
 
-// Main Plugin Class
 export default class DeepInsightAI extends Plugin {
     settings!: DeepInsightAISettings;
     private networkStatus!: NetworkStatusChecker;
@@ -1253,11 +1185,12 @@ class DeepInsightAISettingTab extends PluginSettingTab {
     }
 }
 
-// Type guard functions
 function isAnthropicModel(value: string): value is AnthropicModel {
-    return value === 'claude-3-5-sonnet-latest' || value === 'claude-3-5-haiku-latest';
+    const VALID_MODELS = Object.values(AnthropicModelEnum);
+    return VALID_MODELS.includes(value as AnthropicModel);
 }
 
 function isInsertPosition(value: string): value is InsertPosition {
-    return ['top', 'bottom', 'cursor'].includes(value);
+    const VALID_POSITIONS = Object.values(InsertPositionEnum);
+    return VALID_POSITIONS.includes(value as InsertPosition);
 }
