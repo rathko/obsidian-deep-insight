@@ -534,35 +534,47 @@ export default class DeepInsightAI extends Plugin {
             }
             
             this.costTracker = new CostTracker(this.settings.model);
+    
+            // Get prompts for size calculations
+            const systemPrompt = await this.getPromptFromNote(this.settings.systemPromptPath) || this.settings.defaultSystemPrompt;
+            const userPrompt = await this.getPromptFromNote(this.settings.userPromptPath) || this.settings.defaultUserPrompt;
+    
+            // Calculate reserved tokens
+            const systemPromptSize = Math.ceil(systemPrompt.length / 3);
+            const userPromptSize = Math.ceil(userPrompt.length / 3);
+            const RESPONSE_TOKENS = 10000;
+            const RESERVED_TOKENS = systemPromptSize + userPromptSize + RESPONSE_TOKENS;
+            const MAX_CHUNK_SIZE = this.settings.maxTokensPerRequest - RESERVED_TOKENS;
+            const MAX_CHUNK_CHARS = MAX_CHUNK_SIZE * 3;
+    
+            // Get filtered files
+            const files = this.app.vault.getMarkdownFiles()
+                .filter(file => !this.settings.excludeFolders
+                    .some(folder => file.path.toLowerCase().startsWith(folder.toLowerCase())));
+    
             new Notice('🔍 Starting your knowledge journey...');
             
             const chunks = await this.getAllNotesContent();
-            const chunkResults: string[] = [];
-            
-            // First pass: Process each chunk with engaging messages
-            for (let i = 0; i < chunks.length; i++) {
-                const messages = [
-                    '🧠 Diving deep into your notes...',
-                    '💫 Extracting pearls of wisdom...',
-                    '🎯 Connecting the dots in your notes...',
-                    '✨ Uncovering insights...',
-                    '🔮 Crystallizing your thoughts...'
-                ];
-                
-                // Show a random message for variety
-                new Notice(
-                    `${messages[Math.floor(Math.random() * messages.length)]} ` +
-                    `(Processing chunk ${i + 1} of ${chunks.length})`
-                );
-                
+    
+            // Show initial estimate if cost summary is enabled
+            if (this.settings.showCostSummary && this.costTracker) {
+                const costMessage = this.costTracker.generateInitialCostEstimate(chunks.length);
+                new Notice(costMessage, 10000);
+            }
+    
+            // If there's only one chunk, process it directly without combination
+            if (chunks.length === 1) {
                 try {
-                    const tasks = await this.callAnthropicAPI(chunks[i].content);
-                    chunkResults.push(tasks);
-                    
-                    // Show progress confirmation
-                    if (chunks.length > 1) {
-                        new Notice(`🎉 Chunk ${i + 1} successfully processed! Moving forward...`);
+                    const result = await this.callAnthropicAPI(chunks[0].content);
+                    await this.insertTasks(editor, result);
+    
+                    let successMessage = '✨ Deep insights successfully crystallized.';
+                    if (this.settings.showCostSummary && this.costTracker) {
+                        const { details } = this.costTracker.calculateCost();
+                        successMessage += `\n\n${details}`;
                     }
+                    new Notice(successMessage, 7000);
+                    return;
                 } catch (error) {
                     if (error instanceof DeepInsightAIError && error.type === 'Network') {
                         new Notice('📡 Network error: Please check your connection', 5000);
@@ -572,22 +584,46 @@ export default class DeepInsightAI extends Plugin {
                 }
             }
     
-            // Second pass: Combine results with engaging message
-            if (chunkResults.length > 0) {
-                if (chunkResults.length > 1) {
-                    new Notice('🧩 Merging insights together into a cohesive narrative...');
+            // Multiple chunks: Process with progress updates and combination
+            const chunkResults: string[] = [];
+            for (let i = 0; i < chunks.length; i++) {
+                const messages = [
+                    '🧠 Diving deep into your notes...',
+                    '💫 Extracting pearls of wisdom...',
+                    '🎯 Connecting the dots in your notes...',
+                    '✨ Uncovering insights...',
+                    '🔮 Crystallizing your thoughts...'
+                ];
+                
+                new Notice(
+                    `${messages[Math.floor(Math.random() * messages.length)]} ` +
+                    `(Processing chunk ${i + 1} of ${chunks.length})`
+                );
+                
+                try {
+                    const tasks = await this.callAnthropicAPI(chunks[i].content);
+                    chunkResults.push(tasks);
+                    new Notice(`🎉 Chunk ${i + 1} successfully processed! Moving forward...`);
+                } catch (error) {
+                    if (error instanceof DeepInsightAIError && error.type === 'Network') {
+                        new Notice('📡 Network error: Please check your connection', 5000);
+                        return;
+                    }
+                    throw error;
                 }
-                const finalTasks = await this.combineChunkResults(chunkResults);
-                await this.insertTasks(editor, finalTasks);
-    
-                // Create success message with optional cost
-                let successMessage = '✨ Deep insights successfully crystallized.';
-                if (this.settings.showCostSummary && this.costTracker) {
-                    const { details } = this.costTracker.calculateCost();
-                    successMessage += `\n\n${details}`;
-                }
-                const notice = new Notice(successMessage, 7000);
             }
+    
+            // Combine results for multiple chunks
+            new Notice('🧩 Merging insights together into a cohesive narrative...');
+            const finalTasks = await this.combineChunkResults(chunkResults);
+            await this.insertTasks(editor, finalTasks);
+    
+            let successMessage = '✨ Deep insights successfully crystallized.';
+            if (this.settings.showCostSummary && this.costTracker) {
+                const { details } = this.costTracker.calculateCost();
+                successMessage += `\n\n${details}`;
+            }
+            new Notice(successMessage, 7000);
             
         } catch (error) {
             this.handleError(error instanceof Error ? error : new Error(String(error)));
@@ -1039,7 +1075,7 @@ class DeepInsightAISettingTab extends PluginSettingTab {
             .addDropdown(dropdown => {
                 const options = {
                     'claude-3-5-sonnet-latest': 'Claude 3.5 Sonnet (Balanced)',
-                    'claude-3-5-haiku-latest': 'Claude 3.5 Haiku (Cheap)'
+                    'claude-3-5-haiku-latest': 'Claude 3.5 Haiku (Less Expensive)'
                 };
                 
                 dropdown
