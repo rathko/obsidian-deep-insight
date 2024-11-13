@@ -143,3 +143,12 @@
 .setting-item-control .clickable-icon {
     margin-left: 6px;
 }
+
+/* Visibility Classes */
+.deep-insight-ai-hidden {
+    display: none;
+}
+
+.deep-insight-ai-visible {
+    display: block;
+}
