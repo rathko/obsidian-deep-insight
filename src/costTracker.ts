@@ -1,3 +1,5 @@
+import { ANTHROPIC_API_CONSTANTS } from './constants';
+
 interface ModelCosts {
     input: number;
     output: number;
@@ -77,7 +79,6 @@ export class CostTracker {
     }
 
     static estimateTokens(text: string): number {
-        // Rough estimation: ~4 characters per token
-        return Math.ceil(text.length / 4);
+        return Math.ceil(text.length / ANTHROPIC_API_CONSTANTS.CHARS_PER_TOKEN);
     }
 }

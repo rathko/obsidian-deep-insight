@@ -131,3 +131,15 @@
     padding-left: 1rem;
     border-left: 2px solid var(--background-modifier-border);
 }
+
+.deep-insight-ai-path-input {
+    background-color: var(--background-modifier-form-field) !important;
+    border: none !important;
+    color: var(--text-muted) !important;
+    cursor: default !important;
+}
+
+/* Optional: Add this if you want to style the icons */
+.setting-item-control .clickable-icon {
+    margin-left: 6px;
+}
