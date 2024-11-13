@@ -28,9 +28,12 @@ export const DEFAULT_PROMPTS = {
    - Contribution to society and making a positive impact
    - Continuous learning and skill development
    - Achieving a sense of purpose and fulfillment
-9. Prioritize tasks that contribute to these life goals and help the user make better decisions aligned with their values`,
+9. Prioritize tasks that contribute to these life goals and help the user make better decisions aligned with their values
+`,
 
-    user: `Please analyze the provided Obsidian notes and generate a concise task list, focusing on tasks that align with my life goals and values. For each task, include:
+    user: `First, find relevant quotes from the provided documents by searching for key patterns, insights, and important information. Place these quotes within <quotes> tags.
+
+Then, based on these quotes and the overall context analyze the provided Obsidian notes and generate a concise task list, focusing on tasks that align with my life goals and values. For each task, include:
 
 - A concise task name
 - An Obsidian backlink to the source note
@@ -47,6 +50,7 @@ Identify tasks that support my personal growth, relationships, health, financial
 
 When analysing "Daily Notes", avoid including any tasks mentioned below "Deep Insight AI Generated Tasks" for a given day. This is to make sure we do not end up in a self-perpetuating feedback loop where we end up recreating same tasks over and over, the only exception to this is if some tasks from that auto-generate list were marked as completed. You can then exclude them from the future auto-generated list. Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]]. 
 
+Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]].
 When generating the notes please organise them using the following template and make sure not to add anything before or after such as notes or questions:
 
 ## Daily Tasks  

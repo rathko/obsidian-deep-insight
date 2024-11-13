@@ -136,12 +136,37 @@ class AnthropicAPIClient {
     }
 }
 
+
+class AnthropicContentFormatter {
+    private documentIndex = 1;
+
+    format(files: { path: string; content: string }[]): string {
+        const documents = files.map(file => this.createDocumentXML(file.path, file.content)).join('\n');
+        return `<documents>\n${documents}\n</documents>`;
+    }
+
+    // Follow best practices from: 
+    //  https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/long-context-tips
+    private createDocumentXML(path: string, content: string): string {
+        return `<document index="${this.documentIndex++}">
+    <source>${path}</source>
+    <document_content>
+${content}
+    </document_content>
+</document>`;
+    }
+
+    reset(): void {
+        this.documentIndex = 1;
+    }
+}
+
 class ContentChunker {
     private static readonly TOKEN_OVERHEAD = {
         SYSTEM_PROMPT: 1000,
         USER_PROMPT: 500,
         RESPONSE: 10000,
-        NOTE_METADATA: 100
+        XML_TAGS: 200
     } as const;
 
     constructor(
@@ -150,11 +175,7 @@ class ContentChunker {
     ) {}
 
     private calculateMaxContentTokens(): number {
-        const overheadTokens = 
-            ContentChunker.TOKEN_OVERHEAD.SYSTEM_PROMPT +
-            ContentChunker.TOKEN_OVERHEAD.USER_PROMPT +
-            ContentChunker.TOKEN_OVERHEAD.RESPONSE;
-        
+        const overheadTokens = Object.values(ContentChunker.TOKEN_OVERHEAD).reduce((a, b) => a + b, 0);
         return Math.max(1000, this.maxTokensPerRequest - overheadTokens);
     }
 
@@ -163,139 +184,93 @@ class ContentChunker {
     }
 
     async createChunks(files: TFile[], vault: Vault): Promise<Array<{ content: string; size: number }>> {
-        const chunks: Array<{ content: string; size: number }> = [];
+        const formatter = new AnthropicContentFormatter();
         const maxContentTokens = this.calculateMaxContentTokens();
-        let currentChunk = '';
+        const chunks: Array<{ content: string; size: number }> = [];
+        let currentFiles: Array<{ path: string; content: string }> = [];
         let currentTokens = 0;
 
-        console.log('Chunking configuration:', {
-            maxTokensPerRequest: this.maxTokensPerRequest,
-            maxContentTokens,
-            totalFiles: files.length
-        });
-        
         for (const file of files) {
             try {
                 const content = await vault.read(file);
-                const formattedNote = this.formatNote(file, content);
-                const noteTokens = this.estimateTokens(formattedNote);
-
-                // Log individual note sizes for debugging
-                console.log(`Note size for ${file.path}:`, {
-                    tokens: noteTokens,
-                    chars: formattedNote.length
-                });
+                const noteContent = content.trim();
+                const noteTokens = this.estimateTokens(noteContent);
 
                 if (currentTokens > 0 && (currentTokens + noteTokens > maxContentTokens)) {
-                    chunks.push({ 
-                        content: currentChunk, 
-                        size: this.estimateTokens(currentChunk)
-                    });
-                    currentChunk = '';
+                    chunks.push(this.createChunk(formatter, currentFiles));
+                    currentFiles = [];
                     currentTokens = 0;
+                    formatter.reset();
                 }
 
-                // Handle large individual notes
                 if (noteTokens > maxContentTokens) {
-                    if (currentTokens > 0) {
-                        chunks.push({ 
-                            content: currentChunk, 
-                            size: this.estimateTokens(currentChunk)
-                        });
-                        currentChunk = '';
+                    if (currentFiles.length > 0) {
+                        chunks.push(this.createChunk(formatter, currentFiles));
+                        currentFiles = [];
                         currentTokens = 0;
+                        formatter.reset();
                     }
-                    
-                    const noteChunks = this.splitLargeNote(formattedNote, maxContentTokens);
-                    chunks.push(...noteChunks);
+                    chunks.push(...this.splitLargeNote(file.path, noteContent, maxContentTokens));
+                    formatter.reset();
                     continue;
                 }
 
-                currentChunk += formattedNote;
+                currentFiles.push({ path: file.path, content: noteContent });
                 currentTokens += noteTokens;
             } catch (error) {
                 console.error(`Error processing file ${file.path}:`, error);
             }
         }
 
-        if (currentTokens > 0) {
-            chunks.push({ 
-                content: currentChunk, 
-                size: this.estimateTokens(currentChunk)
-            });
+        if (currentFiles.length > 0) {
+            chunks.push(this.createChunk(formatter, currentFiles));
         }
-
-        // Log final chunking results
-        console.log('Chunking results:', {
-            totalChunks: chunks.length,
-            chunkSizes: chunks.map(chunk => this.estimateTokens(chunk.content)),
-            averageChunkSize: chunks.reduce((acc, chunk) => acc + this.estimateTokens(chunk.content), 0) / chunks.length
-        });
 
         return chunks;
     }
 
-    private formatNote(file: TFile, content: string): string {
-        const folderPath = file.path.substring(0, file.path.lastIndexOf('/'));
-        return `=== Note Path: ${file.path} ===
-Folder: ${folderPath || 'root'}
-
-Content:
-${content}
-
-=== End Note ===
-
-`;
+    private createChunk(formatter: AnthropicContentFormatter, files: Array<{ path: string; content: string }>): { content: string; size: number } {
+        const content = formatter.format(files);
+        return {
+            content: content,
+            size: this.estimateTokens(content)
+        };
     }
 
-    private splitLargeNote(note: string, maxTokens: number): Array<{ content: string; size: number }> {
+    private splitLargeNote(path: string, content: string, maxTokens: number): Array<{ content: string; size: number }> {
         const chunks: Array<{ content: string; size: number }> = [];
-        let remainingContent = note;
+        let remainingContent = content;
         const maxCharsPerChunk = maxTokens * this.charsPerToken;
+        const formatter = new AnthropicContentFormatter();
         
         while (remainingContent.length > 0) {
-            if (this.estimateTokens(remainingContent) <= maxTokens) {
-                chunks.push({ 
-                    content: remainingContent, 
-                    size: this.estimateTokens(remainingContent)
-                });
-                break;
-            }
-
             const splitIndex = this.findOptimalSplitPoint(remainingContent, maxCharsPerChunk);
-            const chunk = remainingContent.slice(0, splitIndex);
+            const chunkContent = remainingContent.slice(0, splitIndex).trim();
             
-            chunks.push({ 
-                content: chunk, 
-                size: this.estimateTokens(chunk)
-            });
+            if (chunkContent.length > 0) {
+                const content = formatter.format([{ path, content: chunkContent }]);
+                chunks.push({
+                    content: content,
+                    size: this.estimateTokens(content)
+                });
+            }
             
             remainingContent = remainingContent.slice(splitIndex).trim();
+            formatter.reset();
         }
 
         return chunks;
     }
 
     private findOptimalSplitPoint(text: string, maxChars: number): number {
-        // Try to split at paragraph breaks first
-        let splitIndex = text.lastIndexOf('\n\n', maxChars);
-        
-        // If no paragraph break found, try sentence breaks
-        if (splitIndex === -1 || splitIndex < maxChars * 0.5) {
-            splitIndex = text.lastIndexOf('. ', maxChars);
-        }
-        
-        // If no good natural break point found, split at word boundary
-        if (splitIndex === -1 || splitIndex < maxChars * 0.5) {
-            splitIndex = text.lastIndexOf(' ', maxChars);
-        }
-        
-        // If all else fails, split at exact char limit
-        if (splitIndex === -1) {
-            splitIndex = maxChars;
-        }
-        
-        return splitIndex + 1;
+        const breakPoints = [
+            text.lastIndexOf('\n\n', maxChars),
+            text.lastIndexOf('. ', maxChars),
+            text.lastIndexOf(' ', maxChars)
+        ];
+
+        const validBreakPoint = breakPoints.find(point => point !== -1 && point > maxChars * 0.5);
+        return validBreakPoint !== undefined ? validBreakPoint + 1 : maxChars;
     }
 }
 
