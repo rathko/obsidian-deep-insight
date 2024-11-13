@@ -151,4 +151,27 @@
 
 .deep-insight-ai-visible {
     display: block;
+}.deep-insight-ai-hidden {
+    display: none;
+}
+
+.deep-insight-ai-visible {
+    display: block;
+}
+
+.deep-insight-ai-advanced-chevron {
+    transition: transform 0.3s ease;
+}
+
+.deep-insight-ai-advanced-chevron.open {
+    transform: rotate(180deg);
+}
+
+.deep-insight-ai-advanced-section {
+    transition: opacity 0.3s ease;
+    opacity: 0;
+}
+
+.deep-insight-ai-advanced-section.deep-insight-ai-visible {
+    opacity: 1;
 }

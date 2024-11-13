@@ -413,10 +413,7 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         });
 
         this.advancedSettingsEl = containerEl.createDiv({
-            cls: 'deep-insight-ai-advanced-section',
-            attr: {
-                style: this.plugin.settings.showAdvancedSettings ? 'display: block' : 'display: none'
-            }
+            cls: `deep-insight-ai-advanced-section ${this.plugin.settings.showAdvancedSettings ? 'deep-insight-ai-visible' : 'deep-insight-ai-hidden'}`
         });
 
         advancedHeader.addEventListener('click', () => this.toggleAdvancedSettings(chevron));
@@ -428,11 +425,11 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         
         chevron.classList.toggle('open');
         if (this.advancedSettingsEl) {
+            this.advancedSettingsEl.classList.toggle('deep-insight-ai-hidden');
+            this.advancedSettingsEl.classList.toggle('deep-insight-ai-visible');
+            
             if (this.plugin.settings.showAdvancedSettings) {
-                this.advancedSettingsEl.style.display = 'block';
                 this.displayAdvancedSettings(this.advancedSettingsEl);
-            } else {
-                this.advancedSettingsEl.style.display = 'none';
             }
         }
     }
@@ -465,7 +462,8 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
                     
                     const testModeOptions = testModeContainer.querySelector('.test-mode-options');
                     if (testModeOptions instanceof HTMLElement) {
-                        testModeOptions.style.display = value ? 'block' : 'none';
+                        testModeOptions.classList.toggle('deep-insight-ai-hidden', !value);
+                        testModeOptions.classList.toggle('deep-insight-ai-visible', value);
                     }
                 }));
 
@@ -474,10 +472,7 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
 
     private createTestModeOptions(container: HTMLElement): void {
         const testModeOptions = container.createDiv({
-            cls: 'test-mode-options',
-            attr: {
-                style: this.plugin.settings.testMode.enabled ? 'display: block' : 'display: none'
-            }
+            cls: `test-mode-options ${this.plugin.settings.testMode.enabled ? 'deep-insight-ai-visible' : 'deep-insight-ai-hidden'}`
         });
 
         new Setting(testModeOptions)
