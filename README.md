@@ -1,6 +1,6 @@
 # Obsidian Deep Insight AI
 
-A powerful Obsidian plugin that leverages AI to analyze **all your Markdown notes** and generate actionable insights and tasks.
+An Obsidian plugin that leverages AI to analyze **all your Markdown notes** and generate actionable insights and tasks.
 
 Have hundreds of notes with scattered tasks, commitments, and ideas? Deep Insight AI acts as your personal assistant to ensure nothing falls through the cracks.
 
