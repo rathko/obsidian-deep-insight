@@ -1,186 +1,150 @@
 # Obsidian Deep Insight AI
 
-An Obsidian plugin that leverages AI to analyze **all your Markdown notes** and generate actionable insights and tasks.
+**Obsidian Deep Insight AI** plugin uses power of AI to sift through **all your Markdown notes**, extracting actionable insights and tasks.
 
-Have hundreds of notes with scattered tasks, commitments, and ideas? Deep Insight AI acts as your personal assistant to ensure nothing falls through the cracks.
+Overwhelmed by scattered tasks, deadlines, and ideas across your vault? Let Deep Insight AI become your personal assistant to ensure nothing is overlooked.
 
 ![Deep Insight AI Demo](docs/deep-insight-ai-demo.gif)
 
 ## Why Deep Insight AI?
 
-Your vault might contain:
-- Commitments scattered across daily notes
-- Project deadlines in various folders
-- Ideas waiting to be rediscovered
-- Patterns and themes you've never noticed
-- Follow-ups that need attention
+Your vault likely holds:
+- Tasks and commitments lost in daily notes
+- Project deadlines scattered across folders
+- Ideas buried and waiting to be rediscovered
+- Patterns and themes you haven't noticed
+- Follow-ups that need your attention
 
-Instead of manually reviewing hundreds of notes, this plugin:
-- Analyzes all your Markdown notes using AI
-- Extracts actionable items using your custom prompts
-- Identifies patterns and recurring themes
-- Brings forgotten tasks back to attention
-- Maintains context from your folder structure
-- Generates insights exactly the way you want them
+Deep Insight AI makes manual review a thing of the past:
+- Analyzes every Markdown note using customizable AI prompts
+- Extracts actionable items based on your queries
+- Spots recurring themes and big-picture patterns
+- Surfaces forgotten or missed tasks
+- Maintains the folder structure you’ve already set up
+- Delivers insights exactly the way you want
 
-Think of it as having a personal assistant who reads through your entire vault, understands how you think, and surfaces what matters - all based on your own prompts and preferences.
+It's like having a personal assistant that reads your entire vault, understands your workflow, and knows what to highlight based on your preferences.
 
-## Features
+## Key Features
 
 - 🤖 Powered by Claude 3.5 AI models (Sonnet and Haiku)
-- 📝 Analyzes all Markdown files in your vault (you can exclude folders in settings)
-- ✅ Generates actionable tasks and insights from your notes
-- 📁 Maintains folder context and organization
-- 🎯 Smart task prioritization / insights based on note context
-- ⚡ Process notes in chunks for large vaults
-- 💰 Provides cost estimates of the used AI model
+- 📝 Analyzes every Markdown file in your vault (exclude folders via settings)
+- ✅ Extracts tasks and actionable insights using custom prompts
+- 📁 Preserves folder context and organization
+- 🎯 Smart prioritization based on note context
+- ⚡ Processes large vaults in manageable chunks
+- 💰 Provides cost estimates for AI usage
 
 ## Installation
 
 1. Open Obsidian Settings
-2. Go to "Community Plugins" and enable "Community Plugins"
+2. Navigate to "Community Plugins" and enable it
 3. Click "Browse" and search for "Deep Insight AI"
-4. Click "Install"
-5. Enable the plugin
+4. Click "Install" and enable the plugin
 
 ## Configuration
 
 1. Get your API key from [Anthropic](https://console.anthropic.com/settings/keys)
-2. Open plugin settings in Obsidian
+2. Open the plugin settings within Obsidian
 3. Enter your Anthropic API key
-4. Configure optional settings:
-   - Choose preferred Claude model (Sonnet or Haiku)
-   - Set excluded folders
-   - Customize insertion position for generated tasks (text will be inserted in currently selected notes)
-   - Set custom system, user and combination prompts
-   - Enable costs to see AI model cost estimates
-5. Configure advanced settings:
-   - Test mode helps to reduce the experimentation costs. Useful when you experiment with prompts or local development
-   - Maximum tokens per request - 100k in Claude. You might want to reduce it slighlty it in case your prompts are very long and Anthopic API complains.
-   - Retry attempts - might be useful for larger vaults to avoid reprocessing entire vault 
+4. Configure additional settings:
+   - Choose either Claude Sonnet or Haiku models
+   - Exclude certain folders if needed
+   - Set where task insights should be inserted in your notes
+   - Customize prompts (System, User, Combination)
+   - Enable cost tracking for AI estimates
+5. Access advanced settings:
+   - Test mode to reduce costs during experimentation
+   - Max tokens per request (default 100k; reduce if needed)
+   - Retry attempts for processing large vaults more smoothly
 
-## Usage
+## How to Use
 
-1. Open any note where you want to insert generated tasks (for example: your current daily note)
-2. Open Command Palette (Cmd/Ctrl + P)
+1. Open any note where you want to insert generated tasks (like your daily note)
+2. Open the Command Palette (Cmd/Ctrl + P)
 3. Search for "Deep Insight AI: Generate Insights from Notes"
-4. Tasks / insights will be generated and inserted at your preferred position
+4. The plugin will generate tasks/insights and insert them in your chosen location
 
-Note: The plugin processes only Markdown (.md) files in your vault. Other file types (images, PDFs, etc.) are not analyzed.
+*Note: Only markdown files (.md) are analyzed; other file types like PDFs, images, etc., are excluded.*
 
 ## Customization
 
 ### Custom Prompts
 
-The plugin uses three types of prompts that you can customize through your own Obsidian notes:
+Tailor the behavior of the AI by adjusting the types of prompts used in your workflow:
 
-#### System Prompt
-The system prompt defines HOW the AI should analyze your notes. Think of it as giving instructions to your personal assistant about their role and methodology. It sets the overall behavior, style, and approach to processing your notes.
+- **System Prompt:** Defines how the AI approaches analysis—like instructions for a personal assistant. Customize to set task formats, note categorizations, priorities, and style.
+- **User Prompt:** Asks the assistant for specific insights or tasks. E.g., extract project deadlines, summarize ideas, or find research notes.
+- **Combination Prompt:** Useful for combining insights from large vaults processed over multiple chunks.
 
-You can customize this to:
-- Change the task format and structure
-- Add specific categorization rules
-- Include additional context or metadata
-- Modify the output organization
-- Change the analysis style (e.g., more formal or casual)
-- Define custom task priorities and labeling
-- Set specific formatting rules
+### How to Set Custom Prompts
 
-#### User Prompt
-The user prompt defines WHAT specific insights or tasks you want to generate. It's like asking your assistant a specific question about your notes.
+1. Create notes in your vault for each type of prompt
+2. Link them in the plugin settings using "Select Note"
+3. Edit the prompts directly in Obsidian as needed
 
-Example use cases:
-- Extract learning points and create a study plan
-- Find all project deadlines and create a timeline
-- Identify key decisions and their rationale
-- Summarize main ideas and create action items
-- Find all meeting notes and extract commitments
-- Generate a weekly progress report
-- Create a knowledge summary
-- Extract research findings
-- Identify resource requirements
+Examples:
+- Use specific prompts for different workflows (e.g., one for task management, one for creative brainstorming)
+- Test and refine prompts to match your output needs
 
-#### Combination Prompt
-Used when processing large vaults in more than 1 chunk, this prompt defines how to merge insights from multiple sets of notes. This helps maintain consistency and avoid duplication when analyzing large amounts of content.
+### AI Models
 
-### How to Set Up Custom Prompts
+- **Claude 3.5 Sonnet:** Best for detailed analysis and task extraction
+- **Claude 3.5 Haiku:** Quick task generation for smaller note sets
+- **OpenAI Models:** In development
 
-1. Create separate notes in your vault for each prompt type
-2. Open plugin settings
-3. Select your prompt notes using the "Select Note" buttons
-4. Edit your prompt notes directly in Obsidian as needed
+## Contributions
 
-Tips for working with prompts:
-- Keep prompts in a dedicated "Prompts" or "Templates" folder
-- Test different prompts to find what works best for your notes
-- Review the generated output and adjust prompts accordingly
-- You can use Markdown formatting in your prompts
-- Consider creating different prompt notes for different use cases (e.g., one for project management, another for study notes)
-
-### Models
-
-- **Claude 3.5 Sonnet**: Recommended for detailed analysis and complex task extraction
-- **Claude 3.5 Haiku**: Best for quick task generation and smaller note sets
-- **OpenAI models**: In development
-
-## Contributing
-
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+We welcome contributions! For major changes, please start by opening an issue to discuss your ideas.
 
 ## License
 
 [MIT](LICENSE)
 
-## Support
+## Support 
 
-If you encounter any issues or have questions:
-1. Check the [FAQ](#faq) section below
-2. Open an issue on GitHub
-3. Try the plugin's error handling features:
-   - Check console logs for detailed error messages
+Encounter an issue? Here’s what you can do:
+1. Check the [FAQ](#faq) section
+2. Submit an issue through GitHub
+3. Troubleshoot using the plugin's error handling features and check console logs
 
 ## FAQ
 
-### Q: Why aren't my tasks being generated?
-A: Check:
-1. API key is correctly set
+### Q: Why aren’t tasks being generated?
+A: Check if:
+1. Your API key is correctly set
 2. You have an active internet connection
-3. Selected folders aren't in the excluded list
+3. Folders aren’t accidentally excluded in the settings
 
-### Q: What types of files does the plugin process?
-A: The plugin only processes Markdown (.md) files. Other file types (images, PDFs, etc.) are not analyzed. This ensures focused and reliable task extraction from your written notes while reducing costs.
+### Q: What file types does the plugin process?
+A: The plugin only processes Markdown (.md) files. Other file types (images, PDFs, etc.) are ignored to keep the analysis focused and efficient.
 
-### Q: How does the chunking system work?
-A: The plugin processes notes in chunks to:
+### Q: How does chunking work?
+A: Chunking helps by processing notes in smaller sections to:
 1. Handle large vaults efficiently
-2. Stay within API limits
+2. Stay within API token limits
 3. Maintain context across related notes
 
-### Q: Can I use this with other AI models?
-A: Currently, the plugin supports Claude 3.5 models only. Pull requests are welcomed.
+### Q: Can I integrate other AI models?
+A: The plugin currently supports only Claude 3.5 models. We gladly accept pull requests!
 
 ### Q: How is my data handled?
-A: The plugin operates with complete privacy. Your notes are processed directly between your local Obsidian vault and Anthropic (Claude AI). No data is collected, stored, or transmitted anywhere else.
+A: Your notes are only processed between your Obsidian vault and Anthropic (Claude AI). No data is stored or transmitted elsewhere, ensuring complete privacy.
 
-## Local development
+## Local Development
 
-1. Checkout the repo into the Obsidian plugins folder
-2. Build the plugin
-```
-# Install nvm, or make sure you do have node v20.18.0
-# This plugins aims to follow latest Obsidian Node version
-# Other Node versions might work but are not supported
-nvm use
-
-# Build the plugin
-npm install
-npm run build
-```
-3. Go to "Community Plugins" and enable "Community Plugins"
-4. Enable "Deep Insight AI"
-5. Click "Configure" icon, provide your Anthropic API key
-
+1. Clone the repo into your Obsidian plugins folder
+2. Build the plugin using:
+   ```bash
+   # Ensure you have Node v20.18.0
+   nvm use
+   npm install
+   npm run build
+   ```
+3. Enable "Deep Insight AI" under "Community Plugins"
+4. Configure it with your Anthropic API key
 
 ## Credits
 
-Created by Radek Maciaszek  
+Created by Radek Maciaszek
+
