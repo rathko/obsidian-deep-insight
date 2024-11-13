@@ -13,7 +13,7 @@ export const DEFAULT_SETTINGS: DeepInsightAISettings = {
     defaultSystemPrompt: DEFAULT_PROMPTS.system,
     defaultUserPrompt: DEFAULT_PROMPTS.user,
     defaultCombinationPrompt: DEFAULT_PROMPTS.combination,
-    retryAttempts: 2,
+    retryAttempts: 1,
     showCostSummary: true,
     testMode: {
         enabled: false,

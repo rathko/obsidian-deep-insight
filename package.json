@@ -1,7 +1,7 @@
 {
     "name": "deep-insight-ai",
     "version": "1.0.1",
-    "description": "Generate insights from your Obsidian notes using AI",
+    "description": "Unlock actionable tasks and insights from your Obsidian notes with the power of AI.",
     "main": "main.js",
     "scripts": {
         "dev": "node esbuild.config.mjs",

@@ -192,7 +192,7 @@ class ContentChunker {
 
         for (const file of files) {
             try {
-                const content = await vault.read(file);
+                const content = await vault.cachedRead(file);
                 const noteContent = content.trim();
                 const noteTokens = this.estimateTokens(noteContent);
 
@@ -316,7 +316,7 @@ export default class DeepInsightAI extends Plugin {
         
         this.addCommand({
             id: 'generate-insights',
-            name: 'Generate Insights from Notes',
+            name: 'Generate Insights and Tasks from Notes',
             editorCallback: (editor: Editor) => this.generateTasks(editor)
         });
     
@@ -490,7 +490,7 @@ export default class DeepInsightAI extends Plugin {
                 throw new Error('Prompt file not found');
             }
 
-            return await this.app.vault.read(promptFile);
+            return await this.app.vault.cachedRead(promptFile);
         } catch (error) {
             console.warn('Failed to read prompt, using default:', error);
             return promptPath === this.settings.systemPromptPath
