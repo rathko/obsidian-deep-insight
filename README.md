@@ -33,6 +33,7 @@ Think of it as having a personal assistant who reads through your entire vault, 
 - 📁 Maintains folder context and organization
 - 🎯 Smart task prioritization / insights based on note context
 - ⚡ Process notes in chunks for large vaults
+- 💰 Provides cost estimates of the used AI model
 
 ## Installation
 
@@ -51,7 +52,12 @@ Think of it as having a personal assistant who reads through your entire vault, 
    - Choose preferred Claude model (Sonnet or Haiku)
    - Set excluded folders
    - Customize insertion position for generated tasks (text will be inserted in currently selected notes)
-   - Set custom system, user and combination prompts.
+   - Set custom system, user and combination prompts
+   - Enable costs to see AI model cost estimates
+5. Configure advanced settings:
+   - Test mode helps to reduce the experimentation costs. Useful when you experiment with prompts or local development
+   - Maximum tokens per request - 100k in Claude. You might want to reduce it slighlty it in case your prompts are very long and Anthopic API complains.
+   - Retry attempts - might be useful for larger vaults to avoid reprocessing entire vault 
 
 ## Usage
 
@@ -95,7 +101,7 @@ Example use cases:
 - Identify resource requirements
 
 #### Combination Prompt
-Used when processing large vaults in chunks, this prompt defines how to merge insights from multiple sets of notes. This helps maintain consistency and avoid duplication when analyzing large amounts of content.
+Used when processing large vaults in more than 1 chunk, this prompt defines how to merge insights from multiple sets of notes. This helps maintain consistency and avoid duplication when analyzing large amounts of content.
 
 ### How to Set Up Custom Prompts
 
