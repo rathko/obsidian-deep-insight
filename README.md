@@ -1,6 +1,6 @@
-# Obsidian Deep Insight AI
+# Deep Insight AI
 
-**Obsidian Deep Insight AI** plugin uses power of AI to sift through **all your Markdown notes**, extracting actionable insights and tasks.
+**Deep Insight AI** taps into the power of AI to sift through all your Markdown notes in [Obsidian](https://obsidian.md/), surfacing actionable insights and tasks.
 
 Overwhelmed by scattered tasks, deadlines, and ideas across your vault? Let Deep Insight AI become your personal assistant to ensure nothing is overlooked.
 

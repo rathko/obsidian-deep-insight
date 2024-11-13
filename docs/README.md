@@ -17,6 +17,8 @@ git push origin 1.0.2
 
 ### 4. Monitor the GitHub Action Workflow
 
+Note: using Github Obsidian plugin release action https://docs.obsidian.md/Plugins/Releasing/Release+your+plugin+with+GitHub+Actions
+
 ### 5. Publish the Release
 
 Once the GitHub Action workflow completes:
