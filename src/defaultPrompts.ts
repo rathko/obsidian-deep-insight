@@ -48,7 +48,8 @@ Aim for a concise task list without duplicating detailed descriptions. Leverage 
 
 Identify tasks that support my personal growth, relationships, health, financial stability, sense of purpose, and continuous learning. Prioritize tasks that help me make better decisions and take actions that are consistent with my values and aspirations.
 
-When analysing "Daily Notes", avoid including any tasks mentioned below "Deep Insight AI Generated Tasks" for a given day. This is to make sure we do not end up in a self-perpetuating feedback loop where we end up recreating same tasks over and over, the only exception to this is if some tasks from that auto-generate list were marked as completed. You can then exclude them from the future auto-generated list. Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]]. 
+When analysing "Daily Notes", avoid including any tasks mentioned below "Generated Tasks" for a given day. This is to make sure we do not end up in a self-perpetuating feedback loop where we end up recreating same tasks over and over, the only exception to this is if some tasks from that auto-generate list were marked as completed. 
+You can then exclude them from the future auto-generated list. Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]]. 
 
 Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]].
 When generating the notes please organise them using the following template and make sure not to add anything before or after such as notes or questions:
