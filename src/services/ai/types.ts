@@ -54,3 +54,12 @@ export interface AIProvider {
     generateResponse(messages: AIMessage[]): Promise<AIResponse>;
     estimateTokens(text: string): number;
 }
+export interface ModelCosts {
+    input: number;
+    output: number;
+    displayName: string;
+}
+
+export interface AIProvider {
+    getCosts(): ModelCosts;
+}
