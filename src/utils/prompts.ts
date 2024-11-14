@@ -27,4 +27,28 @@ export class PromptManager {
             template
         );
     }
+}import { TFile, Vault } from 'obsidian';
+
+export class PromptManager {
+    static async loadPromptTemplate(
+        vault: Vault,
+        promptPath: string,
+        defaultPrompt: string
+    ): Promise<string> {
+        try {
+            if (!promptPath) {
+                return defaultPrompt;
+            }
+
+            const promptFile = vault.getAbstractFileByPath(promptPath);
+            if (!(promptFile instanceof TFile)) {
+                return defaultPrompt;
+            }
+
+            return await vault.cachedRead(promptFile);
+        } catch (error) {
+            console.warn('Failed to read prompt, using default:', error);
+            return defaultPrompt;
+        }
+    }
 }

@@ -20,4 +20,12 @@ export class ResultFormatter {
     static formatCost(cost: number): string {
         return `$${cost.toFixed(4)}`;
     }
+}export class ResultFormatter {
+    static formatDate(): string {
+        return window.moment().format('YYYY-MM-DD');
+    }
+
+    static formatTaskHeader(date: string): string {
+        return `## Generated Tasks (${date})\n\n`;
+    }
 }

@@ -30,4 +30,19 @@ export class ErrorHandler {
         const baseMessage = this.ERROR_MESSAGES[error.error.type];
         return `${baseMessage}: ${error.error.message}`;
     }
+}import { Notice } from 'obsidian';
+import { DeepInsightError } from './types';
+
+export class ErrorHandler {
+    static handle(error: unknown): void {
+        if (error instanceof DeepInsightError) {
+            new Notice(`${error.error.type}: ${error.error.message}`, 5000);
+            console.error('Deep Insight AI Error:', error);
+            return;
+        }
+
+        const message = error instanceof Error ? error.message : 'An unknown error occurred';
+        new Notice(`Error: ${message}`, 5000);
+        console.error('Deep Insight AI Error:', error);
+    }
 }
