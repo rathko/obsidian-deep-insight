@@ -37,25 +37,42 @@ export const AI_MODELS = {
     }
 } as const;
 
-export const ANTHROPIC_API_CONSTANTS = {
-    BASE_URL: 'https://api.anthropic.com/v1/messages',
-    API_VERSION: '2023-06-01',
-    DEFAULT_MAX_TOKENS: 8192,
-    RESPONSE_TOKENS: 10000,
-    // Rough estimation: ~4 characters per token
-    CHARS_PER_TOKEN: 4
+export const API_CONSTANTS = {
+    anthropic: {
+        BASE_URL: 'https://api.anthropic.com/v1/messages',
+        API_VERSION: '2023-06-01',
+        DEFAULT_MAX_TOKENS: 8192,
+        RESPONSE_TOKENS: 10000,
+        CHARS_PER_TOKEN: 4
+    },
+    openai: {
+        BASE_URL: 'https://api.openai.com/v1/chat/completions',
+        DEFAULT_MAX_TOKENS: 4096,
+        RESPONSE_TOKENS: 8192,
+        CHARS_PER_TOKEN: 4
+    }
+} as const;
+
+export const TOKEN_LIMITS = {
+    SYSTEM_PROMPT: 1000,
+    USER_PROMPT: 500,
+    RESPONSE: 10000,
+    XML_TAGS: 200,
+    CHUNK_SIZE: 100000
 } as const;
 
 export const UI_MESSAGES = {
     PROCESSING: [
-        '🧠 Diving deep into your notes...',
-        '💫 Extracting pearls of wisdom...',
-        '🎯 Connecting the dots in your notes...',
-        '✨ Uncovering insights...',
-        '🔮 Crystallizing your thoughts...'
+        '🧠 Analyzing your notes...',
+        '💫 Extracting insights...',
+        '🎯 Connecting ideas...',
+        '✨ Processing content...',
+        '🔮 Synthesizing information...'
     ],
-    SUCCESS: '✨ Deep insights successfully crystallized.',
-    COMBINING: '🎭 Harmonizing multiple perspectives...',
-    NETWORK_ERROR: '📡 Network error: Please check your connection'
+    SUCCESS: '✨ Analysis complete!',
+    COMBINING: '🎭 Combining multiple sections...',
+    NETWORK_ERROR: '📡 Connection error: Please check your network',
+    API_ERROR: '❌ API error: Please check your settings',
+    RATE_LIMIT: '⚠️ Rate limit reached: Please try again later'
 } as const;
 
