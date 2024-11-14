@@ -1,5 +1,6 @@
 import { App, Notice, Setting, PluginSettingTab, TFile, SuggestModal } from 'obsidian';
 import { DEFAULT_PROMPTS } from './defaultPrompts';
+import { AI_MODELS, AIProvider, AIModel } from './types';
 import type DeepInsightAI from './main';
 
 export const InsertPositionEnum = {
@@ -153,10 +154,10 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
                     'claude-3-5-sonnet-latest': 'Claude 3.5 Sonnet (Balanced)',
                     'claude-3-5-haiku-latest': 'Claude 3.5 Haiku (Less Expensive)'
                 })
-                .setValue(this.plugin.settings.model)
+                .setValue(this.plugin.settings.provider.model)
                 .onChange(async (value) => {
                     if (isAnthropicModel(value)) {
-                        this.plugin.settings.model = value;
+                        this.plugin.settings.provider.model = value as AIModel;
                         await this.plugin.saveSettings();
                     }
                 }));
