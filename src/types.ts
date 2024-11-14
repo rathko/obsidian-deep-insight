@@ -4,9 +4,15 @@ export type AnthropicModel = 'claude-3-5-sonnet-latest' | 'claude-3-5-haiku-late
 
 export type ErrorType = 'API' | 'File' | 'Settings' | 'Processing' | 'Network';
 
-export interface DeepInsightAISettings {
+export interface AIProviderSettings {
+    type: 'anthropic' | 'openai';
     apiKey: string;
-    model: AnthropicModel;
+    model: string;
+    maxTokens?: number;
+}
+
+export interface DeepInsightAISettings {
+    provider: AIProviderSettings;
     systemPromptPath: string;
     userPromptPath: string;
     combinationPromptPath: string;
