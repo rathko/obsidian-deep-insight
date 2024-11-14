@@ -2,8 +2,11 @@ import { DEFAULT_PROMPTS } from './defaultPrompts';
 import { DeepInsightAISettings } from './types';
 
 export const DEFAULT_SETTINGS: DeepInsightAISettings = {
-    apiKey: '',
-    model: 'claude-3-5-sonnet-latest',
+    provider: {
+        type: 'anthropic',
+        apiKey: '',
+        model: 'claude-3-5-sonnet-latest'
+    },
     systemPromptPath: '',
     userPromptPath: '',
     combinationPromptPath: '',
@@ -22,6 +25,17 @@ export const DEFAULT_SETTINGS: DeepInsightAISettings = {
     },
     showAdvancedSettings: false,
 };
+
+export const AI_MODELS = {
+    anthropic: {
+        'claude-3-5-sonnet-latest': 'Claude 3.5 Sonnet (Powerful)',
+        'claude-3-5-haiku-latest': 'Claude 3.5 Haiku (Affordable)'
+    },
+    openai: {
+        'gpt-4o': 'GPT-4o Flagship (Powerful)',
+        'gpt-4o-mini': 'GPT-o mini Turbo (Affordable)'
+    }
+} as const;
 
 export const ANTHROPIC_API_CONSTANTS = {
     BASE_URL: 'https://api.anthropic.com/v1/messages',
