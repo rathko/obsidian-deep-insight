@@ -36,6 +36,6 @@ export class CostTracker {
         const maxCostPerChunk = costs.input * CostTracker.TOKENS_PER_CHUNK;
         const totalEstimate = (maxCostPerChunk * numChunks).toFixed(2);
 
-        return `🔎 Starting analysis...\n\nProcessing ${numChunks} chunk${numChunks > 1 ? 's' : ''} using ${costs.displayName}\nEstimated maximum cost: $${totalEstimate}\n(Based on ${CostTracker.TOKENS_PER_CHUNK.toLocaleString()} tokens per chunk)`;
+        return `Processing ${numChunks} chunk${numChunks > 1 ? 's' : ''} using ${costs.displayName}\nEstimated maximum cost: $${totalEstimate}\n(Based on ${CostTracker.TOKENS_PER_CHUNK.toLocaleString()} tokens per chunk)`;
     }
 }

@@ -1,11 +1,13 @@
-import { RequestUrlResponse, requestUrl } from 'obsidian';
+import { RequestUrlResponse } from 'obsidian';
 import { AIProvider, AIMessage, AIResponse, AIProviderConfig } from './types';
 import { API_CONSTANTS, MODEL_CONFIGS } from '../../constants';
+import { NetworkManager } from '../network/networkManager';
 
 export class AnthropicProvider implements AIProvider {
     private apiKey: string = '';
     private model: string = '';
     private maxTokens: number = 0;
+    private networkManager: NetworkManager;
 
     private static readonly COSTS = {
         'claude-3-5-sonnet-latest': {
@@ -20,6 +22,10 @@ export class AnthropicProvider implements AIProvider {
         }
     };
 
+    constructor() {
+        this.networkManager = NetworkManager.getInstance();
+    }
+
     initialize(config: AIProviderConfig): void {
         this.apiKey = config.apiKey;
         this.model = config.model;
@@ -27,7 +33,16 @@ export class AnthropicProvider implements AIProvider {
     }
 
     async generateResponse(messages: AIMessage[]): Promise<AIResponse> {
-        const response = await requestUrl({
+        const systemMessage = messages.find(m => m.role === 'system')?.content || '';
+        
+        const formattedMessages = messages
+            .filter(m => m.role !== 'system')
+            .map(m => ({
+                role: m.role,
+                content: m.content
+            }));
+
+        const response = await this.networkManager.makeRequest({
             url: API_CONSTANTS.anthropic.BASE_URL,
             method: 'POST',
             headers: {
@@ -39,7 +54,8 @@ export class AnthropicProvider implements AIProvider {
             body: JSON.stringify({
                 model: this.model,
                 max_tokens: this.maxTokens,
-                messages: messages
+                messages: formattedMessages,
+                system: systemMessage
             }),
             throw: false
         });
@@ -47,10 +63,16 @@ export class AnthropicProvider implements AIProvider {
         return this.parseResponse(response);
     }
 
-    private async parseResponse(response: RequestUrlResponse): Promise<AIResponse> {
+    private parseResponse(response: RequestUrlResponse): AIResponse {
         if (response.status !== 200) {
-            const data = JSON.parse(response.text);
-            throw new Error(data.error?.message || `API request failed with status ${response.status}`);
+            let errorMessage = 'API request failed';
+            try {
+                const data = JSON.parse(response.text);
+                errorMessage = data.error?.message || `API request failed with status ${response.status}`;
+            } catch (e) {
+                errorMessage = `API request failed with status ${response.status}`;
+            }
+            throw new Error(errorMessage);
         }
     
         const data = JSON.parse(response.text);

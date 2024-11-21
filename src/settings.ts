@@ -470,7 +470,7 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         
         new Setting(testModeContainer)
             .setName('Test Mode')
-            .setDesc('Limit processing for testing and development purposes to a single chunk')
+            .setDesc('Limit processing for testing and development purposes to a single chunk. Helpful when testing prompts improvements.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.testMode.enabled)
                 .onChange(async (value) => {

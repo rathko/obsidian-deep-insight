@@ -1,6 +1,7 @@
 import { TFile, Vault } from 'obsidian';
 import { DeepInsightAISettings } from '../../types';
 import { TestModeManager } from '../test/testManager';
+import { TOKEN_LIMITS, MODEL_CONFIGS } from '../../constants';
 
 export class ContentProcessor {
     constructor(
@@ -15,7 +16,10 @@ export class ContentProcessor {
             this.settings
         );
 
-        const chunker = new ContentChunker(this.settings.maxTokensPerRequest);
+        const chunker = new ContentChunker(
+            this.settings.maxTokensPerRequest,
+            MODEL_CONFIGS[this.settings.provider.model].contextWindow
+        );
         return chunker.createChunks(files, this.vault);
     }
 
@@ -27,16 +31,11 @@ export class ContentProcessor {
 }
 
 class ContentChunker {
-    private static readonly TOKEN_OVERHEAD = {
-        SYSTEM_PROMPT: 1000,
-        USER_PROMPT: 500,
-        RESPONSE: 10000,
-        XML_TAGS: 200
-    };
+    private static readonly CHARS_PER_TOKEN = 4;
 
     constructor(
         private readonly maxTokensPerRequest: number,
-        private readonly charsPerToken: number = 4
+        private readonly modelContextWindow: number
     ) {}
 
     async createChunks(files: TFile[], vault: Vault): Promise<Array<{ content: string; size: number }>> {
@@ -74,13 +73,20 @@ class ContentChunker {
     }
 
     private calculateMaxContentTokens(): number {
-        const overheadTokens = Object.values(ContentChunker.TOKEN_OVERHEAD)
-            .reduce((sum, tokens) => sum + tokens, 0);
-        return this.maxTokensPerRequest - overheadTokens;
+        const overheadTokens = TOKEN_LIMITS.SYSTEM_PROMPT +
+            TOKEN_LIMITS.USER_PROMPT +
+            TOKEN_LIMITS.RESPONSE +
+            TOKEN_LIMITS.XML_TAGS;
+
+        // Use the smaller of maxTokensPerRequest or modelContextWindow
+        const maxAllowedTokens = Math.min(this.maxTokensPerRequest, this.modelContextWindow);
+        
+        // Ensure we don't exceed the chunk size limit
+        return Math.min(maxAllowedTokens - overheadTokens, TOKEN_LIMITS.CHUNK_SIZE);
     }
 
     private estimateTokens(text: string): number {
-        return Math.ceil(text.length / this.charsPerToken);
+        return Math.ceil(text.length / ContentChunker.CHARS_PER_TOKEN);
     }
 
     private createChunk(content: string): { content: string; size: number } {
@@ -93,7 +99,7 @@ class ContentChunker {
     private splitLargeContent(content: string, maxTokens: number): Array<{ content: string; size: number }> {
         const chunks: Array<{ content: string; size: number }> = [];
         let remaining = content;
-        const maxChars = maxTokens * this.charsPerToken;
+        const maxChars = maxTokens * ContentChunker.CHARS_PER_TOKEN;
 
         while (remaining.length > 0) {
             const chunk = remaining.slice(0, maxChars);

@@ -52,7 +52,7 @@ When analysing "Daily Notes", avoid including any tasks mentioned below "Generat
 You can then exclude them from the future auto-generated list. Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]]. 
 Do not take into consideration the notes from today's daily notes.
 
-Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]].
+Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]]. There is no need to include .md file extension in the backlink.
 When generating the notes please organise them using the following template and make sure not to add anything before or after such as notes or questions:
 
 ## Daily Tasks  
@@ -93,7 +93,7 @@ When generating the notes please organise them using the following template and 
 9. Prioritize tasks that help the user make better decisions and take actions aligned with their values and aspirations
 10. Provide a clear, organized master task list that empowers the user to focus on what matters most and make meaningful progress towards their life goals
 
-Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]].
+Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]]. There is no need to include .md file extension in the backlink.
 When generating the notes please organise them using the following template and make sure not to add anything before or after such as notes or questions:
 
 ## Daily Tasks  

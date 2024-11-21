@@ -1,11 +1,13 @@
-import { RequestUrlResponse, requestUrl } from 'obsidian';
+import { RequestUrlResponse } from 'obsidian';
 import { AIProvider, AIMessage, AIResponse, AIProviderConfig } from './types';
-import { MODEL_CONFIGS } from 'src/constants';
+import { MODEL_CONFIGS, API_CONSTANTS } from '../../constants';
+import { NetworkManager } from '../network/networkManager';
 
 export class OpenAIProvider implements AIProvider {
     private apiKey: string = '';
     private model: string = '';
     private maxTokens: number = 4096;
+    private networkManager: NetworkManager;
 
     private static readonly COSTS = {
         'gpt-4o': {
@@ -20,15 +22,19 @@ export class OpenAIProvider implements AIProvider {
         }
     };
 
+    constructor() {
+        this.networkManager = NetworkManager.getInstance();
+    }
+
     initialize(config: AIProviderConfig): void {
         this.apiKey = config.apiKey;
         this.model = config.model;
-        this.maxTokens = config.maxTokens ?? 4096;
+        this.maxTokens = config.maxTokens ?? API_CONSTANTS.openai.DEFAULT_MAX_TOKENS;
     }
 
     async generateResponse(messages: AIMessage[]): Promise<AIResponse> {
-        const response = await requestUrl({
-            url: 'https://api.openai.com/v1/chat/completions',
+        const response = await this.networkManager.makeRequest({
+            url: API_CONSTANTS.openai.BASE_URL,
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${this.apiKey}`,
@@ -45,7 +51,7 @@ export class OpenAIProvider implements AIProvider {
         return this.parseResponse(response);
     }
 
-    private async parseResponse(response: RequestUrlResponse): Promise<AIResponse> {
+    private parseResponse(response: RequestUrlResponse): AIResponse {
         if (response.status !== 200) {
             const data = JSON.parse(response.text);
             throw new Error(data.error?.message || `API request failed with status ${response.status}`);
@@ -66,9 +72,7 @@ export class OpenAIProvider implements AIProvider {
     }
 
     estimateTokens(text: string): number {
-        // OpenAI uses tiktoken for accurate token counting
-        // This is a simple approximation
-        return Math.ceil(text.length / 4);
+        return Math.ceil(text.length / API_CONSTANTS.openai.CHARS_PER_TOKEN);
     }
 
     getCosts(): { input: number; output: number; displayName: string } {

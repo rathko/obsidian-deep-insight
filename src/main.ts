@@ -25,6 +25,7 @@ export default class DeepInsightAI extends Plugin {
         await this.loadSettings();
         
         this.networkManager = NetworkManager.getInstance();
+        this.networkManager.initialize(this.settings);
         this.initializeProvider();
         
         this.addCommand({
