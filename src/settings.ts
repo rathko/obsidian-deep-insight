@@ -1,43 +1,8 @@
-import { App, Notice, Setting, PluginSettingTab, TFile, SuggestModal } from 'obsidian';
+import { App, Notice, Setting, PluginSettingTab, TFile, SuggestModal, DropdownComponent } from 'obsidian';
 import { DEFAULT_PROMPTS } from './defaultPrompts';
-import { AI_MODELS, AIProvider, AIModel } from './types';
+import { AIProvider, AIModel, DeepInsightAISettings } from './types';
+import { AI_MODELS } from './constants';
 import type DeepInsightAI from './main';
-
-export const InsertPositionEnum = {
-    top: 'top',
-    bottom: 'bottom',
-    cursor: 'cursor'
-} as const;
-
-export const AnthropicModelEnum = {
-    sonnet: 'claude-3-5-sonnet-latest',
-    haiku: 'claude-3-5-haiku-latest'
-} as const;
-
-export type InsertPosition = typeof InsertPositionEnum[keyof typeof InsertPositionEnum];
-export type AnthropicModel = typeof AnthropicModelEnum[keyof typeof AnthropicModelEnum];
-
-export interface DeepInsightAISettings {
-    apiKey: string;
-    model: AnthropicModel;
-    systemPromptPath: string;
-    userPromptPath: string;
-    combinationPromptPath: string;
-    excludeFolders: string[];
-    maxTokensPerRequest: number;
-    insertPosition: InsertPosition;
-    defaultSystemPrompt: string;
-    defaultUserPrompt: string;
-    defaultCombinationPrompt: string;
-    retryAttempts: number;
-    showCostSummary: boolean;
-    testMode: {
-        enabled: boolean;
-        maxFiles?: number;
-        maxTokens?: number;
-    };
-    showAdvancedSettings: boolean;
-}
 
 export class PromptNotesModal extends SuggestModal<TFile> {
     constructor(
@@ -57,7 +22,7 @@ export class PromptNotesModal extends SuggestModal<TFile> {
         
         return files
             .filter(file => !excludedFolders
-                .some(folder => file.path.toLowerCase().startsWith(folder.toLowerCase())))
+                .some((folder: string) => file.path.toLowerCase().startsWith(folder.toLowerCase())))
             .filter(file => {
                 if (!query) {
                     return true;
@@ -135,41 +100,84 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
     }
 
     private displayBasicSettings(containerEl: HTMLElement): void {
-        new Setting(containerEl)
-            .setName('Anthropic API Key')
-            .setDesc('Your Anthropic API key')
-            .addText(text => text
-                .setPlaceholder('Enter your API key')
-                .setValue(this.plugin.settings.apiKey)
-                .onChange(async (value) => {
-                    this.plugin.settings.apiKey = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(containerEl)
-            .setName('Model')
-            .setDesc('Select Claude model to use')
-            .addDropdown(dropdown => dropdown
-                .addOptions({
-                    'claude-3-5-sonnet-latest': 'Claude 3.5 Sonnet (Balanced)',
-                    'claude-3-5-haiku-latest': 'Claude 3.5 Haiku (Less Expensive)'
-                })
-                .setValue(this.plugin.settings.provider.model)
-                .onChange(async (value) => {
-                    if (isAnthropicModel(value)) {
-                        this.plugin.settings.provider.model = value as AIModel;
-                        await this.plugin.saveSettings();
-                    }
-                }));
-
+        this.createAISettings(containerEl);
         this.addBasicSettingOptions(containerEl);
+    }
+
+    private createAISettings(containerEl: HTMLElement): void {
+        const providerSetting = new Setting(containerEl)
+            .setName('AI Provider')
+            .setDesc('Select your AI provider');
+
+        const modelSetting = new Setting(containerEl)
+            .setName('Model')
+            .setDesc('Select the model to use')
+            .setClass('model-setting');
+
+        const apiKeySetting = new Setting(containerEl)
+            .setName('API Key')
+            .setDesc(`Your ${this.plugin.settings.provider.type} API key`);
+
+        let modelDropdownComponent: DropdownComponent;
+
+        const providerDropdown = providerSetting.addDropdown(dropdown => {
+            dropdown.addOptions({
+                anthropic: 'Anthropic',
+                openai: 'OpenAI'
+            });
+            dropdown.setValue(this.plugin.settings.provider.type);
+            
+            dropdown.onChange(async (value: string) => {
+                const providerValue = value as AIProvider;
+                this.plugin.settings.provider.type = providerValue;
+                
+                const availableModels = AI_MODELS[providerValue];
+                const firstModel = Object.keys(availableModels)[0] as AIModel;
+                
+                this.plugin.settings.provider.model = firstModel;
+                await this.plugin.saveSettings();
+                
+                this.updateModelDropdown(modelDropdownComponent, providerValue);
+                apiKeySetting.setDesc(`Your ${providerValue} API key`);
+            });
+        });
+
+        modelSetting.addDropdown(dropdown => {
+            modelDropdownComponent = dropdown;
+            this.updateModelDropdown(dropdown, this.plugin.settings.provider.type);
+            dropdown.setValue(this.plugin.settings.provider.model);
+            
+            dropdown.onChange(async (value: string) => {
+                this.plugin.settings.provider.model = value as AIModel;
+                await this.plugin.saveSettings();
+            });
+        });
+
+        apiKeySetting.addText(text => text
+            .setPlaceholder('Enter your API key')
+            .setValue(this.plugin.settings.provider.apiKey)
+            .onChange(async (value) => {
+                this.plugin.settings.provider.apiKey = value;
+                await this.plugin.saveSettings();
+            }));
+    }
+
+    private updateModelDropdown(dropdown: DropdownComponent, provider: AIProvider): void {
+        // Remove all existing options
+        const selectEl = dropdown.selectEl;
+        while (selectEl.options.length > 0) {
+            selectEl.remove(0);
+        }
+        
+        // Add new options based on provider
+        const models = AI_MODELS[provider];
+        dropdown.addOptions(models);
     }
 
     private addBasicSettingOptions(containerEl: HTMLElement): void {
         this.addSettingOption(containerEl, 'Show Estimated API Cost', 
             'Display estimated cost when generating insights', 'showCostSummary');
 
-        this.addInsertPositionSetting(containerEl);
         this.addExcludedFoldersSetting(containerEl);
     }
 
@@ -201,25 +209,6 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         }
     }
 
-    private addInsertPositionSetting(containerEl: HTMLElement): void {
-        new Setting(containerEl)
-            .setName('Insert Position')
-            .setDesc('Where to insert generated insights in the note')
-            .addDropdown(dropdown => dropdown
-                .addOptions({
-                    'top': 'At the top of the note',
-                    'bottom': 'At the bottom of the note',
-                    'cursor': 'At current cursor position'
-                })
-                .setValue(this.plugin.settings.insertPosition)
-                .onChange(async (value) => {
-                    if (isInsertPosition(value)) {
-                        this.plugin.settings.insertPosition = value;
-                        await this.plugin.saveSettings();
-                    }
-                }));
-    }
-
     private addExcludedFoldersSetting(containerEl: HTMLElement): void {
         new Setting(containerEl)
             .setName('Excluded Folders')
@@ -231,6 +220,34 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
                     this.plugin.settings.excludeFolders = value.split(',').map(f => f.trim());
                     await this.plugin.saveSettings();
                 }));
+    }
+
+    private async displayPromptSettings(containerEl: HTMLElement): Promise<void> {
+        containerEl.createEl('h3', { text: 'Prompts Configuration' });
+
+        await Promise.all([
+            this.createPromptSection(
+                containerEl,
+                'System Prompt',
+                'Defines how the AI should process notes',
+                'systemPromptPath',
+                'defaultSystemPrompt'
+            ),
+            this.createPromptSection(
+                containerEl,
+                'User Prompt',
+                'Defines what specific insight to generate',
+                'userPromptPath',
+                'defaultUserPrompt'
+            ),
+            this.createPromptSection(
+                containerEl,
+                'Combination Prompt',
+                'Defines how to merge and organize tasks from multiple chunks',
+                'combinationPromptPath',
+                'defaultCombinationPrompt'
+            )
+        ]);
     }
 
     private async createPromptSection(
@@ -320,7 +337,6 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         pathSetting: keyof Pick<DeepInsightAISettings, 'systemPromptPath' | 'userPromptPath' | 'combinationPromptPath'>,
         defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt' | 'defaultCombinationPrompt'>
     ): Promise<void> {
-        // Note selection and reset buttons in a single line
         new Setting(container)
             .addButton(button => button
                 .setButtonText(notePath ? 'Change Note' : 'Select Note')
@@ -530,40 +546,4 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
                     }
                 }));
     }
-
-    private async displayPromptSettings(containerEl: HTMLElement): Promise<void> {
-        containerEl.createEl('h3', { text: 'Prompts Configuration' });
-
-        await Promise.all([
-            this.createPromptSection(
-                containerEl,
-                'System Prompt',
-                'Defines how the AI should process notes',
-                'systemPromptPath',
-                'defaultSystemPrompt'
-            ),
-            this.createPromptSection(
-                containerEl,
-                'User Prompt',
-                'Defines what specific insight to generate',
-                'userPromptPath',
-                'defaultUserPrompt'
-            ),
-            this.createPromptSection(
-                containerEl,
-                'Combination Prompt',
-                'Defines how to merge and organize tasks from multiple chunks',
-                'combinationPromptPath',
-                'defaultCombinationPrompt'
-            )
-        ]);
-    }
-}
-
-export function isAnthropicModel(value: string): value is AnthropicModel {
-    return Object.values(AnthropicModelEnum).includes(value as AnthropicModel);
-}
-
-export function isInsertPosition(value: string): value is InsertPosition {
-    return Object.values(InsertPositionEnum).includes(value as InsertPosition);
 }

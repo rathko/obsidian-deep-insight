@@ -1,4 +1,4 @@
-import { AIProvider } from './services/ai/types';
+import { AIProvider, AIUsage } from './services/ai/types';
 
 export class CostTracker {
     private inputTokens: number = 0;
@@ -10,10 +10,10 @@ export class CostTracker {
         this.provider = provider;
     }
 
-    addUsage(usage?: { promptTokens: number; completionTokens: number; totalTokens: number }): void {
+    addUsage(usage?: AIUsage): void {
         if (usage) {
-            this.inputTokens += usage.promptTokens;
-            this.outputTokens += usage.completionTokens;
+            this.inputTokens += usage.inputTokens;
+            this.outputTokens += usage.outputTokens;
         }
     }
 

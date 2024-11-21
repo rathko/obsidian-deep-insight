@@ -1,6 +1,6 @@
 {
     "name": "deep-insight-ai",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Unlock actionable tasks and insights from your Obsidian notes with the power of AI.",
     "main": "main.js",
     "scripts": {
@@ -10,7 +10,7 @@
         "lint": "eslint . --ext .ts"
     },
     "devDependencies": {
-        "@types/node": "^20.8.0",
+        "@types/node": "^20.17.6",
         "@typescript-eslint/eslint-plugin": "^6.7.0",
         "@typescript-eslint/parser": "^6.7.0",
         "builtin-modules": "^3.3.0",

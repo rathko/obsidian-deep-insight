@@ -1,10 +1,14 @@
 # Deep Insight AI
 
-**Deep Insight AI** taps into the power of AI to sift through all your Markdown notes in [Obsidian](https://obsidian.md/), surfacing actionable insights and tasks.
+### Unlock actionable tasks and insights from your Obsidian notes with the power of AI.
 
-Overwhelmed by scattered tasks, deadlines, and ideas across your vault? Let Deep Insight AI become your personal assistant to ensure nothing is overlooked.
+**Deep Insight AI** plugin taps into the power of AI to sift through all your Markdown notes in [Obsidian](https://obsidian.md/), surfacing actionable insights and tasks.
+
+Here's an example:
 
 ![Deep Insight AI Demo](docs/deep-insight-ai-demo.gif)
+
+Overwhelmed by scattered tasks, deadlines, and ideas across your vault? Let Deep Insight AI become your personal assistant to ensure nothing is overlooked.
 
 ## Why Deep Insight AI?
 
@@ -50,7 +54,6 @@ It's like having a personal assistant that reads your entire vault, understands 
 4. Configure additional settings:
    - Choose either Claude Sonnet or Haiku models
    - Exclude certain folders if needed
-   - Set where task insights should be inserted in your notes
    - Customize prompts (System, User, Combination)
    - Enable cost tracking for AI estimates
 5. Access advanced settings:
@@ -61,9 +64,10 @@ It's like having a personal assistant that reads your entire vault, understands 
 ## How to Use
 
 1. Open any note where you want to insert generated tasks (like your daily note)
-2. Open the Command Palette (Cmd/Ctrl + P)
-3. Search for "Deep Insight AI: Generate Insights from Notes"
-4. The plugin will generate tasks/insights and insert them in your chosen location
+2. Select with the cursos the location where generated tasks should be inserted
+3. Open the Command Palette (Cmd/Ctrl + P)
+4. Search for "Deep Insight AI: Generate Insights from Notes"
+5. The plugin will generate tasks/insights and insert them in your chosen location
 
 *Note: Only markdown files (.md) are analyzed; other file types like PDFs, images, etc., are excluded.*
 

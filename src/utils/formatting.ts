@@ -1,3 +1,5 @@
+import { AnalysisResult } from "src/types/results";
+
 export class ResultFormatter {
     static formatTasks(tasks: AnalysisResult['tasks']): string {
         return tasks.map(task => {
@@ -20,7 +22,7 @@ export class ResultFormatter {
     static formatCost(cost: number): string {
         return `$${cost.toFixed(4)}`;
     }
-}export class ResultFormatter {
+
     static formatDate(): string {
         return window.moment().format('YYYY-MM-DD');
     }

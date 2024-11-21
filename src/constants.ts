@@ -1,18 +1,18 @@
 import { DEFAULT_PROMPTS } from './defaultPrompts';
 import { DeepInsightAISettings } from './types';
+import { ModelConfig } from './services/ai/types';
 
 export const DEFAULT_SETTINGS: DeepInsightAISettings = {
     provider: {
         type: 'anthropic',
         apiKey: '',
-        model: 'claude-3-5-sonnet-latest'
+        model: 'claude-3-5-haiku-latest'
     },
     systemPromptPath: '',
     userPromptPath: '',
     combinationPromptPath: '',
     excludeFolders: ['templates', 'archive'],
     maxTokensPerRequest: 90000,
-    insertPosition: 'cursor',
     defaultSystemPrompt: DEFAULT_PROMPTS.system,
     defaultUserPrompt: DEFAULT_PROMPTS.user,
     defaultCombinationPrompt: DEFAULT_PROMPTS.combination,
@@ -36,6 +36,40 @@ export const AI_MODELS = {
         'gpt-4o-mini': 'GPT-o mini Turbo (Affordable)'
     }
 } as const;
+
+export const MODEL_CONFIGS: Record<string, ModelConfig> = {
+    // Anthropic Models
+    'claude-3-5-sonnet-latest': {
+        maxTokens: 200000,
+        inputCostPer1k: 0.015,  // $0.015 per 1K tokens
+        outputCostPer1k: 0.075, // $0.075 per 1K tokens
+        displayName: 'Claude 3.5 Sonnet',
+        contextWindow: 200000
+    },
+    'claude-3-5-haiku-latest': {
+        maxTokens: 200000,
+        inputCostPer1k: 0.003,  // $0.003 per 1K tokens
+        outputCostPer1k: 0.015, // $0.015 per 1K tokens
+        displayName: 'Claude 3.5 Haiku',
+        contextWindow: 200000
+    },
+    
+    // OpenAI Models
+    'gpt-4o': {
+        maxTokens: 128000,
+        inputCostPer1k: 0.01,   // $0.01 per 1K tokens
+        outputCostPer1k: 0.03,  // $0.03 per 1K tokens
+        displayName: 'GPT-4o',
+        contextWindow: 128000
+    },
+    'gpt-4o-mini': {
+        maxTokens: 16385,
+        inputCostPer1k: 0.0015, // $0.0015 per 1K tokens
+        outputCostPer1k: 0.002, // $0.002 per 1K tokens
+        displayName: 'GPT-4o mini',
+        contextWindow: 16385
+    }
+};
 
 export const API_CONSTANTS = {
     anthropic: {

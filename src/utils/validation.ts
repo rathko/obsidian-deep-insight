@@ -1,3 +1,5 @@
+import { ModelConfig } from "src/services/ai/types";
+
 export class InputValidator {
     static validateApiKey(apiKey: string, provider: string): boolean {
         if (!apiKey) return false;
@@ -21,23 +23,5 @@ export class InputValidator {
             typeof config.outputCostPer1k === 'number' &&
             typeof config.contextWindow === 'number'
         );
-    }
-}
-import { AIProvider } from '../services/ai/types';
-
-export class InputValidator {
-    static validateApiKey(apiKey: string, providerType: string): boolean {
-        if (!apiKey) {
-            return false;
-        }
-
-        switch (providerType.toLowerCase()) {
-            case 'anthropic':
-                return apiKey.startsWith('sk-');
-            case 'openai':
-                return apiKey.startsWith('sk-');
-            default:
-                return false;
-        }
     }
 }

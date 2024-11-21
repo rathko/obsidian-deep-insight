@@ -1,6 +1,5 @@
 import { TFile } from 'obsidian';
-import { DeepInsightAISettings } from '../../settings';
-import { ANTHROPIC_API_CONSTANTS } from '../../constants';
+import { DeepInsightAISettings } from 'src/types';
 
 export class TestModeManager {
     private static instance: TestModeManager;
@@ -33,17 +32,17 @@ export class TestModeManager {
         return files;
     }
 
-    applyTokenLimit(content: string, settings: DeepInsightAISettings): string {
+    applyTokenLimit(content: string, settings: DeepInsightAISettings, charsPerToken: number): string {
         if (!this.isTestModeEnabled(settings) || !settings.testMode.maxTokens) {
             return content;
         }
 
-        const estimatedCurrentTokens = Math.ceil(content.length / ANTHROPIC_API_CONSTANTS.CHARS_PER_TOKEN);
+        const estimatedCurrentTokens = Math.ceil(content.length / charsPerToken);
         if (estimatedCurrentTokens <= settings.testMode.maxTokens) {
             return content;
         }
 
-        const charLimit = settings.testMode.maxTokens * ANTHROPIC_API_CONSTANTS.CHARS_PER_TOKEN;
+        const charLimit = settings.testMode.maxTokens * charsPerToken;
         const truncatedContent = content.slice(0, charLimit);
         
         console.log('Deep Insight AI: Content truncated for testing', {
