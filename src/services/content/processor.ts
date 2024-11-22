@@ -30,8 +30,9 @@ export class ContentProcessor {
     }
 }
 
-class ContentChunker {
+export class ContentChunker {
     private static readonly CHARS_PER_TOKEN = 4;
+    private documentIndex = 1;
 
     constructor(
         private readonly maxTokensPerRequest: number,
@@ -41,7 +42,7 @@ class ContentChunker {
     async createChunks(files: TFile[], vault: Vault): Promise<Array<{ content: string; size: number }>> {
         const maxContentTokens = this.calculateMaxContentTokens();
         const chunks: Array<{ content: string; size: number }> = [];
-        let currentChunk = '';
+        let currentFiles: Array<{ path: string; content: string }> = [];
         let currentTokens = 0;
 
         for (const file of files) {
@@ -49,24 +50,31 @@ class ContentChunker {
             const tokens = this.estimateTokens(content);
 
             if (currentTokens + tokens > maxContentTokens) {
-                if (currentChunk) {
-                    chunks.push(this.createChunk(currentChunk));
-                    currentChunk = '';
+                if (currentFiles.length > 0) {
+                    chunks.push(this.createChunk(currentFiles));
+                    currentFiles = [];
                     currentTokens = 0;
+                    this.resetDocumentIndex();
                 }
                 
                 if (tokens > maxContentTokens) {
-                    chunks.push(...this.splitLargeContent(content, maxContentTokens));
+                    if (currentFiles.length > 0) {
+                        chunks.push(this.createChunk(currentFiles));
+                        currentFiles = [];
+                        currentTokens = 0;
+                        this.resetDocumentIndex();
+                    }
+                    chunks.push(...this.splitLargeContent(file.path, content.trim(), maxContentTokens));
                     continue;
                 }
             }
 
-            currentChunk += (currentChunk ? '\n\n' : '') + `File: ${file.path}\n${content}`;
+            currentFiles.push({ path: file.path, content: content.trim() });
             currentTokens += tokens;
         }
 
-        if (currentChunk) {
-            chunks.push(this.createChunk(currentChunk));
+        if (currentFiles.length > 0) {
+            chunks.push(this.createChunk(currentFiles));
         }
 
         return chunks;
@@ -78,25 +86,38 @@ class ContentChunker {
             TOKEN_LIMITS.RESPONSE +
             TOKEN_LIMITS.XML_TAGS;
 
-        // Use the smaller of maxTokensPerRequest or modelContextWindow
         const maxAllowedTokens = Math.min(this.maxTokensPerRequest, this.modelContextWindow);
         
-        // Ensure we don't exceed the chunk size limit
         return Math.min(maxAllowedTokens - overheadTokens, TOKEN_LIMITS.CHUNK_SIZE);
     }
 
-    private estimateTokens(text: string): number {
-        return Math.ceil(text.length / ContentChunker.CHARS_PER_TOKEN);
-    }
-
-    private createChunk(content: string): { content: string; size: number } {
+    private createChunk(files: { path: string; content: string }[]): { content: string; size: number } {
+        const content = this.formatToXML(files);
         return {
             content,
             size: this.estimateTokens(content)
         };
     }
 
-    private splitLargeContent(content: string, maxTokens: number): Array<{ content: string; size: number }> {
+    // Apply https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/long-context-tips
+    // to both Anthropic and OpenAI
+    private formatToXML(files: { path: string; content: string }[]): string {
+        const documents = files
+            .map(file => this.createDocumentXML(file.path, file.content))
+            .join('\n');
+        return `<documents>\n${documents}\n</documents>`;
+    }
+
+    private createDocumentXML(path: string, content: string): string {
+        return `<document index="${this.documentIndex++}">
+    <source>${path}</source>
+    <document_content>
+${content}
+    </document_content>
+</document>`;
+    }
+
+    private splitLargeContent(path: string, content: string, maxTokens: number): Array<{ content: string; size: number }> {
         const chunks: Array<{ content: string; size: number }> = [];
         let remaining = content;
         const maxChars = maxTokens * ContentChunker.CHARS_PER_TOKEN;
@@ -106,10 +127,18 @@ class ContentChunker {
             remaining = remaining.slice(maxChars);
 
             if (chunk.length > 0) {
-                chunks.push(this.createChunk(chunk));
+                chunks.push(this.createChunk([{ path, content: chunk }]));
             }
         }
 
         return chunks;
+    }
+
+    private estimateTokens(text: string): number {
+        return Math.ceil(text.length / ContentChunker.CHARS_PER_TOKEN);
+    }
+
+    private resetDocumentIndex(): void {
+        this.documentIndex = 1;
     }
 }
