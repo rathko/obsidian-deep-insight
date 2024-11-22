@@ -19,8 +19,8 @@ export class CostTracker {
 
     calculateCost(): { total: number; details: string } {
         const costs = this.provider.getCosts();
-        const inputCost = this.inputTokens * costs.input;
-        const outputCost = this.outputTokens * costs.output;
+        const inputCost = this.inputTokens * costs.inputCostPer1k / 1000;
+        const outputCost = this.outputTokens * costs.outputCostPer1k / 1000;
         const total = inputCost + outputCost;
 
         const details = `Cost Summary (${costs.displayName}):
@@ -33,7 +33,7 @@ export class CostTracker {
 
     generateInitialCostEstimate(numChunks: number): string {
         const costs = this.provider.getCosts();
-        const maxCostPerChunk = costs.input * CostTracker.TOKENS_PER_CHUNK;
+        const maxCostPerChunk = costs.inputCostPer1k / 1000 * CostTracker.TOKENS_PER_CHUNK;
         const totalEstimate = (maxCostPerChunk * numChunks).toFixed(2);
 
         return `Processing ${numChunks} chunk${numChunks > 1 ? 's' : ''} using ${costs.displayName}\nEstimated maximum cost: $${totalEstimate}\n(Based on ${CostTracker.TOKENS_PER_CHUNK.toLocaleString()} tokens per chunk)`;

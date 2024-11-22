@@ -43,7 +43,6 @@ export default class DeepInsightAI extends Plugin {
             this.provider.initialize({
                 apiKey: this.settings.provider.apiKey,
                 model: this.settings.provider.model,
-                maxTokens: MODEL_CONFIGS[this.settings.provider.model]?.maxTokens
             });
 
             if (this.settings.showCostSummary) {

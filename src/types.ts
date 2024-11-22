@@ -12,7 +12,6 @@ export interface AIProviderSettings {
     type: AIProvider;
     apiKey: string;
     model: AIModel;
-    maxTokens?: number;
 }
 
 export interface DeepInsightAISettings {

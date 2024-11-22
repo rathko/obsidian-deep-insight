@@ -19,8 +19,10 @@ export interface AIProvider {
     initialize(config: AIProviderConfig): void;
     generateResponse(messages: AIMessage[]): Promise<AIResponse>;
     estimateTokens(text: string): number;
-    getCosts(): ModelCosts;
-}export interface AIMessage {
+    getCosts(): ModelConfig;
+}
+
+export interface AIMessage {
     role: 'system' | 'user' | 'assistant';
     content: string;
 }
@@ -37,7 +39,6 @@ export interface ModelCosts {
 }
 
 export interface ModelConfig {
-    maxTokens: number;
     inputCostPer1k: number;
     outputCostPer1k: number;
     displayName: string;

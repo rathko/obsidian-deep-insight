@@ -1,35 +1,17 @@
 import { RequestUrlResponse } from 'obsidian';
-import { AIProvider, AIMessage, AIResponse, AIProviderConfig } from './types';
-import { API_CONSTANTS, MODEL_CONFIGS } from '../../constants';
-import { NetworkManager } from '../network/networkManager';
+import { AIMessage, AIResponse, AIProviderConfig, ModelConfig } from './types';
+import { API_CONSTANTS } from '../../constants';
+import { BaseAIProvider } from './baseProvider';
 
-export class AnthropicProvider implements AIProvider {
-    private apiKey: string = '';
-    private model: string = '';
-    private maxTokens: number = 0;
-    private networkManager: NetworkManager;
-
-    private static readonly COSTS = {
-        'claude-3-5-sonnet-latest': {
-            input: MODEL_CONFIGS['claude-3-5-sonnet-latest'].inputCostPer1k / 1000,
-            output: MODEL_CONFIGS['claude-3-5-sonnet-latest'].outputCostPer1k / 1000,
-            displayName: 'Claude 3.5 Sonnet'
-        },
-        'claude-3-5-haiku-latest': {
-            input: MODEL_CONFIGS['claude-3-5-haiku-latest'].inputCostPer1k / 1000,
-            output: MODEL_CONFIGS['claude-3-5-haiku-latest'].outputCostPer1k / 1000,
-            displayName: 'Claude 3.5 Haiku'
-        }
-    };
-
+export class AnthropicProvider extends BaseAIProvider {
     constructor() {
-        this.networkManager = NetworkManager.getInstance();
+        super();
     }
 
     initialize(config: AIProviderConfig): void {
         this.apiKey = config.apiKey;
         this.model = config.model;
-        this.maxTokens = config.maxTokens ?? API_CONSTANTS.anthropic.DEFAULT_MAX_TOKENS;
+        this.maxOutputTokens = API_CONSTANTS.anthropic.MAX_OUTPUT_TOKENS;
     }
 
     async generateResponse(messages: AIMessage[]): Promise<AIResponse> {
@@ -53,7 +35,7 @@ export class AnthropicProvider implements AIProvider {
             },
             body: JSON.stringify({
                 model: this.model,
-                max_tokens: this.maxTokens,
+                max_tokens: this.maxOutputTokens,
                 messages: formattedMessages,
                 system: systemMessage
             }),
@@ -91,13 +73,5 @@ export class AnthropicProvider implements AIProvider {
 
     estimateTokens(text: string): number {
         return Math.ceil(text.length / API_CONSTANTS.anthropic.CHARS_PER_TOKEN);
-    }
-
-    getCosts(): { input: number; output: number; displayName: string } {
-        const costs = AnthropicProvider.COSTS[this.model as keyof typeof AnthropicProvider.COSTS];
-        if (!costs) {
-            throw new Error(`Cost information not available for model: ${this.model}`);
-        }
-        return costs;
     }
 }

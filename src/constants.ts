@@ -29,45 +29,43 @@ export const DEFAULT_SETTINGS: DeepInsightAISettings = {
 export const AI_MODELS = {
     anthropic: {
         'claude-3-5-haiku-latest': 'Claude 3.5 Haiku (Affordable)',
-        'claude-3-5-sonnet-latest': 'Claude 3.5 Sonnet (Flagship)',
+        'claude-3-5-sonnet-latest': 'Claude 3.5 Sonnet (Advanced)',
     },
     openai: {
-        'gpt-4o-mini': 'GPT-o mini (Affordable)',
-        'gpt-4o': 'GPT-4o (Flagship)',
+        'gpt-4o-mini': 'GPT-4o mini (Affordable)',
+        'gpt-4o': 'GPT-4o (Advanced)',
     }
 } as const;
 
 export const MODEL_CONFIGS: Record<string, ModelConfig> = {
     // Anthropic Models
+    // https://www.anthropic.com/pricing#anthropic-api
     'claude-3-5-sonnet-latest': {
-        maxTokens: 15000,
-        inputCostPer1k: 0.015,  
-        outputCostPer1k: 0.075, 
+        inputCostPer1k: 3 / 1000,  
+        outputCostPer1k: 15 / 1000, 
         displayName: 'Claude 3.5 Sonnet',
         contextWindow: 200000
     },
     'claude-3-5-haiku-latest': {
-        maxTokens: 4000,
-        inputCostPer1k: 0.003,  
-        outputCostPer1k: 0.015, 
+        inputCostPer1k: 1 / 1000,  
+        outputCostPer1k: 5 / 1000, 
         displayName: 'Claude 3.5 Haiku',
         contextWindow: 200000
     },
     
     // OpenAI Models
+    // https://openai.com/api/pricing/
     'gpt-4o': {
-        maxTokens: 4096,
-        inputCostPer1k: 0.01,   
-        outputCostPer1k: 0.03,  
+        inputCostPer1k: 2.5 / 1000,
+        outputCostPer1k: 10 / 1000,
         displayName: 'GPT-4o',
         contextWindow: 128000
     },
     'gpt-4o-mini': {
-        maxTokens: 4096,
-        inputCostPer1k: 0.0015, 
-        outputCostPer1k: 0.002, 
+        inputCostPer1k: 0.150 / 1000, 
+        outputCostPer1k: 0.600 / 1000,
         displayName: 'GPT-4o mini',
-        contextWindow: 16385
+        contextWindow: 128000
     }
 };
 
@@ -75,14 +73,12 @@ export const API_CONSTANTS = {
     anthropic: {
         BASE_URL: 'https://api.anthropic.com/v1/messages',
         API_VERSION: '2023-06-01',
-        DEFAULT_MAX_TOKENS: 4000,
-        RESPONSE_TOKENS: 4000,
+        MAX_OUTPUT_TOKENS: 4000,
         CHARS_PER_TOKEN: 4
     },
     openai: {
         BASE_URL: 'https://api.openai.com/v1/chat/completions',
-        DEFAULT_MAX_TOKENS: 4096,
-        RESPONSE_TOKENS: 4096,
+        MAX_OUTPUT_TOKENS: 4096,
         CHARS_PER_TOKEN: 4
     }
 } as const;

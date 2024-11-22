@@ -18,7 +18,6 @@ export class InputValidator {
     static validateModelConfig(model: string, config: ModelConfig): boolean {
         return !!(
             config &&
-            typeof config.maxTokens === 'number' &&
             typeof config.inputCostPer1k === 'number' &&
             typeof config.outputCostPer1k === 'number' &&
             typeof config.contextWindow === 'number'

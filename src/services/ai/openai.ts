@@ -1,35 +1,18 @@
 import { RequestUrlResponse } from 'obsidian';
-import { AIProvider, AIMessage, AIResponse, AIProviderConfig } from './types';
-import { MODEL_CONFIGS, API_CONSTANTS } from '../../constants';
-import { NetworkManager } from '../network/networkManager';
+import { AIMessage, AIResponse, AIProviderConfig, ModelConfig } from './types';
+import { API_CONSTANTS } from '../../constants';
+import { BaseAIProvider } from './baseProvider';
 
-export class OpenAIProvider implements AIProvider {
-    private apiKey: string = '';
-    private model: string = '';
-    private maxTokens: number = 4096;
-    private networkManager: NetworkManager;
-
-    private static readonly COSTS = {
-        'gpt-4o': {
-            input: MODEL_CONFIGS['gpt-4o'].inputCostPer1k / 1000,
-            output: MODEL_CONFIGS['gpt-4o'].outputCostPer1k / 1000,
-            displayName: 'GPT-4o'
-        },
-        'gpt-4o-mini': {
-            input: MODEL_CONFIGS['gpt-4o-mini'].inputCostPer1k / 1000,
-            output: MODEL_CONFIGS['gpt-4o-mini'].outputCostPer1k / 1000,
-            displayName: 'GPT-4o mini'
-        }
-    };
+export class OpenAIProvider extends BaseAIProvider {
 
     constructor() {
-        this.networkManager = NetworkManager.getInstance();
+        super();
     }
 
     initialize(config: AIProviderConfig): void {
         this.apiKey = config.apiKey;
         this.model = config.model;
-        this.maxTokens = config.maxTokens ?? API_CONSTANTS.openai.DEFAULT_MAX_TOKENS;
+        this.maxOutputTokens = API_CONSTANTS.openai.MAX_OUTPUT_TOKENS;
     }
 
     async generateResponse(messages: AIMessage[]): Promise<AIResponse> {
@@ -43,7 +26,7 @@ export class OpenAIProvider implements AIProvider {
             body: JSON.stringify({
                 model: this.model,
                 messages: messages,
-                max_tokens: this.maxTokens
+                max_tokens: this.maxOutputTokens
             }),
             throw: false
         });
@@ -73,13 +56,5 @@ export class OpenAIProvider implements AIProvider {
 
     estimateTokens(text: string): number {
         return Math.ceil(text.length / API_CONSTANTS.openai.CHARS_PER_TOKEN);
-    }
-
-    getCosts(): { input: number; output: number; displayName: string } {
-        const costs = OpenAIProvider.COSTS[this.model as keyof typeof OpenAIProvider.COSTS];
-        if (!costs) {
-            throw new Error(`Cost information not available for model: ${this.model}`);
-        }
-        return costs;
     }
 }
