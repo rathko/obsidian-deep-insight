@@ -101,6 +101,7 @@ Examples:
 ## Contributions
 
 Contributions are welcomed! For major changes, please start by opening an issue to discuss your ideas.
+For development notes see [docs]
 
 ## License
 
@@ -116,7 +117,7 @@ Encounter an issue? Here’s what you can do:
 ## FAQ
 
 ### Q: Is the AI controlling me through my tasks?
-A: Nope! The AI just reads your notes and reminds you what you wrote - like having a photographic memory without the supervillain origin story. It surfaces your own thoughts and plans; you're still the one calling the shots.
+A: AI is just a glorified note-reader that reminds you of stuff you already wrote. No mind control here - unless you count being reminded of that project deadline you tried to forget. You're still the one calling the shots... for now 😉
 
 ### Q: Why aren’t tasks being generated?
 A: Check if:
@@ -128,16 +129,18 @@ A: Check if:
 A: The plugin only processes Markdown (.md) files. Other file types (images, PDFs, etc.) are ignored to keep the analysis focused and efficient.
 
 ### Q: How does chunking work?
-A: Chunking helps by processing notes in smaller sections to:
+A: Chunking (batching) helps by processing notes in smaller sections to:
 1. Handle large vaults efficiently
-2. Stay within API token limits
+2. Stay within API context token limits
 3. Maintain context across related notes
 
 ### Q: Can I integrate other AI models?
-A: The plugin currently supports only Claude 3.5 models. We gladly accept pull requests!
+A: The plugin currently supports Claude 3.5 and OpenAI GPT4o models. Pull requests are gladly accepted!
 
 ### Q: How is my data handled?
-A: Your notes are only processed between your Obsidian vault and Anthropic (Claude AI). No data is stored or transmitted elsewhere, ensuring complete privacy.
+A: Your notes are only processed between your Obsidian vault and Anthropic (Claude AI) / OpenAI. No data is stored or transmitted elsewhere, ensuring complete privacy.
+
+Both OpenAI and Anthroic do not use data submitted via API for training.
 
 ## Credits
 
