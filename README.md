@@ -31,11 +31,10 @@ It's like having a personal assistant that reads your entire vault, understands 
 
 ## Key Features
 
-- 🤖 Powered by Claude 3.5 AI models (Sonnet and Haiku)
-- 📝 Analyzes every Markdown file in your vault (exclude folders via settings)
-- ✅ Extracts tasks and actionable insights using custom prompts
-- 📁 Preserves folder context and organization
-- 🎯 Smart prioritization based on note context
+- 🤖 Powered by Claude 3.5 and OpenAI 4o AI models (Sonnet, Haiku, 4o and 4o mini)
+- 📝 Analyzes every Markdown file in your vault (you can exclude folders via settings)
+- ✅ Extracts tasks and actionable insights using customisable prompts
+- 🎯 Prioritization based on note context
 - ⚡ Processes large vaults in manageable chunks
 - 💰 Provides cost estimates for AI usage
 
@@ -45,6 +44,8 @@ It's like having a personal assistant that reads your entire vault, understands 
 2. Navigate to "Community Plugins" and enable it
 3. Click "Browse" and search for "Deep Insight AI"
 4. Click "Install" and enable the plugin
+
+Note: Alternatively, see [docs] on how to install latest version manually.
 
 ## Configuration
 
@@ -140,7 +141,7 @@ A: The plugin currently supports Claude 3.5 and OpenAI GPT4o models. Pull reques
 ### Q: How is my data handled?
 A: Your notes are only processed between your Obsidian vault and Anthropic (Claude AI) / OpenAI. No data is stored or transmitted elsewhere, ensuring complete privacy.
 
-Both OpenAI and Anthroic do not use data submitted via API for training.
+Both OpenAI and Anthroic do not use data submitted via API for training, unless user specifically opted in.
 
 ## Credits
 
