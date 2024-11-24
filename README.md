@@ -45,7 +45,7 @@ It's like having a personal assistant that reads your entire vault, understands 
 3. Click "Browse" and search for "Deep Insight AI"
 4. Click "Install" and enable the plugin
 
-Note: Alternatively, see [docs] on how to install latest version manually.
+Note: Alternatively, see [docs](./docs) on how to install latest version manually.
 
 ## Configuration
 
@@ -102,7 +102,7 @@ Examples:
 ## Contributions
 
 Contributions are welcomed! For major changes, please start by opening an issue to discuss your ideas.
-For development notes see [docs]
+For development notes see [docs](./docs)
 
 ## License
 
