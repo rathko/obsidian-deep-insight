@@ -1,18 +1,26 @@
-export type InsertPosition = 'top' | 'bottom' | 'cursor';
+import { AI_MODELS } from "./constants";
 
-export type AnthropicModel = 'claude-3-5-sonnet-latest' | 'claude-3-5-haiku-latest';
+export type AIProvider = 'anthropic' | 'openai';
+
+export type AnthropicModel = keyof typeof AI_MODELS.anthropic;
+export type OpenAIModel = keyof typeof AI_MODELS.openai;
+export type AIModel = AnthropicModel | OpenAIModel;
 
 export type ErrorType = 'API' | 'File' | 'Settings' | 'Processing' | 'Network';
 
-export interface DeepInsightAISettings {
+export interface AIProviderSettings {
+    type: AIProvider;
     apiKey: string;
-    model: AnthropicModel;
+    model: AIModel;
+}
+
+export interface DeepInsightAISettings {
+    provider: AIProviderSettings;
     systemPromptPath: string;
     userPromptPath: string;
     combinationPromptPath: string;
     excludeFolders: string[];
     maxTokensPerRequest: number;
-    insertPosition: InsertPosition;
     defaultSystemPrompt: string;
     defaultUserPrompt: string;
     defaultCombinationPrompt: string;
