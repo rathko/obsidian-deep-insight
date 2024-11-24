@@ -117,7 +117,7 @@ Encounter an issue? Here’s what you can do:
 ## FAQ
 
 ### Q: Is the AI controlling me through my tasks?
-A: AI is just a glorified note-reader that reminds you of stuff you already wrote. No mind control here - unless you count being reminded of that project deadline you tried to forget. You're still the one calling the shots... for now 😉
+A: AI is just a glorified note-reader that reminds you of commitments you already wrote. No mind control here - unless you count being reminded of that project deadline you tried to forget. You're still the one calling the shots... for now.
 
 ### Q: Why aren’t tasks being generated?
 A: Check if:
