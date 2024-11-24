@@ -7,7 +7,9 @@ export class TokenCalculator {
 
     static truncateToTokenLimit(text: string, maxTokens: number): string {
         const maxChars = maxTokens * this.AVG_CHARS_PER_TOKEN;
-        if (text.length <= maxChars) return text;
+        if (text.length <= maxChars) {
+            return text;
+        }
         
         return text.slice(0, maxChars) + '...';
     }

@@ -1,4 +1,4 @@
-import { Editor, Notice, Plugin, TFile } from 'obsidian';
+import { Editor, Notice, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, UI_MESSAGES } from './constants';
 import { CostTracker } from './costTracker';
 import { DeepInsightAISettingTab } from './settings';
@@ -12,7 +12,6 @@ import { ErrorHandler } from './services/error/handler';
 import { DeepInsightError } from './services/error/types';
 import { InputValidator } from './utils/validation';
 import { PromptManager } from './utils/prompts';
-import { MODEL_CONFIGS } from './constants';
 
 export default class DeepInsightAI extends Plugin {
     settings!: DeepInsightAISettings;

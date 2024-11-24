@@ -7,10 +7,14 @@ export class PromptManager {
         defaultPrompt: string
     ): Promise<string> {
         try {
-            if (!path) return defaultPrompt;
+            if (!path) {
+                return defaultPrompt;
+            }
 
             const file = vault.getAbstractFileByPath(path);
-            if (!(file instanceof TFile)) return defaultPrompt;
+            if (!(file instanceof TFile)) {
+                return defaultPrompt;
+            }
 
             return await vault.cachedRead(file);
         } catch (error) {

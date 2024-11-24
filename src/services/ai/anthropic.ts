@@ -1,5 +1,5 @@
 import { RequestUrlResponse } from 'obsidian';
-import { AIMessage, AIResponse, AIProviderConfig, ModelConfig } from './types';
+import { AIMessage, AIResponse, AIProviderConfig } from './types';
 import { API_CONSTANTS } from '../../constants';
 import { BaseAIProvider } from './baseProvider';
 

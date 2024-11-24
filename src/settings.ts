@@ -120,7 +120,7 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
 
         let modelDropdownComponent: DropdownComponent;
 
-        const providerDropdown = providerSetting.addDropdown(dropdown => {
+        providerSetting.addDropdown(dropdown => {
             dropdown.addOptions({
                 anthropic: 'Anthropic',
                 openai: 'OpenAI'

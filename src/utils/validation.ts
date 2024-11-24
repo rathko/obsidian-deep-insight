@@ -2,7 +2,9 @@ import { ModelConfig } from "src/services/ai/types";
 
 export class InputValidator {
     static validateApiKey(apiKey: string, provider: string): boolean {
-        if (!apiKey) return false;
+        if (!apiKey) {
+            return false;
+        }
         
         if (provider === 'anthropic') {
             return apiKey.startsWith('sk-') && apiKey.length > 20;
