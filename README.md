@@ -48,16 +48,16 @@ It's like having a personal assistant that reads your entire vault, understands 
 
 ## Configuration
 
-1. Get your API key from [Anthropic](https://console.anthropic.com/settings/keys)
+1. Get your API key from [Anthropic](https://console.anthropic.com/settings/keys) or [OpenAI](https://platform.openai.com/api-keys)
 2. Open the plugin settings within Obsidian
-3. Enter your Anthropic API key
+3. Enter your API key
 4. Configure additional settings:
-   - Choose either Claude Sonnet or Haiku models
+   - Choose either Claude Sonnet, Haiku models or GPT 4o/mini model
    - Exclude certain folders if needed
    - Customize prompts (System, User, Combination)
-   - Enable cost tracking for AI estimates
+   - Enable cost tracking for AI estimates (enabled by default)
 5. Access advanced settings:
-   - Test mode to reduce costs during experimentation
+   - Test mode to reduce costs during experimentation with prompts
    - Max tokens per request (default 100k; reduce if needed)
    - Retry attempts for processing large vaults more smoothly
 
@@ -77,15 +77,15 @@ It's like having a personal assistant that reads your entire vault, understands 
 
 Tailor the behavior of the AI by adjusting the types of prompts used in your workflow:
 
-- **System Prompt:** Defines how the AI approaches analysis—like instructions for a personal assistant. Customize to set task formats, note categorizations, priorities, and style.
+- **System Prompt:** Defines how the AI approaches analysis—like instructions for a personal assistant. Customize to set task formats, note categorizations, priorities, and style. Here is where you define **your purpose and goals**.
 - **User Prompt:** Asks the assistant for specific insights or tasks. E.g., extract project deadlines, summarize ideas, or find research notes.
-- **Combination Prompt:** Useful for combining insights from large vaults processed over multiple chunks.
+- **Combination Prompt:** Prompt used for combining insights from large vaults processed over multiple chunks / batches.
 
 ### How to Set Custom Prompts
 
 1. Create notes in your vault for each type of prompt
 2. Link them in the plugin settings using "Select Note"
-3. Edit the prompts directly in Obsidian as needed
+3. Once the prompt note was selected, you can edit it directly in Obsidian as needed
 
 Examples:
 - Use specific prompts for different workflows (e.g., one for task management, one for creative brainstorming)
@@ -95,11 +95,12 @@ Examples:
 
 - **Claude 3.5 Sonnet:** Best for detailed analysis and task extraction
 - **Claude 3.5 Haiku:** Quick task generation for smaller note sets
-- **OpenAI Models:** In development
+- **OpenAI GPT 4o:** OpenAI Advanced Model, for detailed analysis and task extraction
+- **OpenAI GPT 4o mini:** OpenAI Affordable Model, for quick task extraction 
 
 ## Contributions
 
-We welcome contributions! For major changes, please start by opening an issue to discuss your ideas.
+Contributions are welcomed! For major changes, please start by opening an issue to discuss your ideas.
 
 ## License
 
@@ -113,6 +114,9 @@ Encounter an issue? Here’s what you can do:
 3. Troubleshoot using the plugin's error handling features and check console logs
 
 ## FAQ
+
+### Q: Is the AI controlling me through my tasks?
+A: Nope! The AI just reads your notes and reminds you what you wrote - like having a photographic memory without the supervillain origin story. It surfaces your own thoughts and plans; you're still the one calling the shots.
 
 ### Q: Why aren’t tasks being generated?
 A: Check if:
