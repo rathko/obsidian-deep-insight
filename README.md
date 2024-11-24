@@ -139,19 +139,6 @@ A: The plugin currently supports only Claude 3.5 models. We gladly accept pull r
 ### Q: How is my data handled?
 A: Your notes are only processed between your Obsidian vault and Anthropic (Claude AI). No data is stored or transmitted elsewhere, ensuring complete privacy.
 
-## Local Development
-
-1. Clone the repo into your Obsidian plugins folder
-2. Build the plugin using:
-   ```bash
-   # Ensure you have Node v20.18.0
-   nvm use
-   npm install
-   npm run build
-   ```
-3. Enable "Deep Insight AI" under "Community Plugins"
-4. Configure it with your Anthropic API key
-
 ## Credits
 
 Created by Radek Maciaszek

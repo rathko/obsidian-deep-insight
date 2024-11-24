@@ -1,3 +1,17 @@
+
+# Local Development
+
+1. Clone the repo into your Obsidian plugins folder
+2. Build the plugin using:
+   ```bash
+   # Ensure you have Node v20.18.0, either using nvm or installing directly 
+   nvm use
+   npm install
+   npm run build
+   ```
+3. Enable "Deep Insight AI" under "Community Plugins"
+4. Configure it with your Anthropic API key
+
 # Deep Insight AI Plugin - Release Guide
 
 ## Steps to Release a New Version
