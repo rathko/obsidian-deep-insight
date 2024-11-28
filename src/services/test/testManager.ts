@@ -21,11 +21,11 @@ export class TestModeManager {
             return files;
         }
 
-        console.log('Deep Insight AI: Test Mode Active');
+        console.log('Deep Insight: Test Mode Active');
         
         if (settings.testMode.maxFiles) {
             const limitedFiles = files.slice(0, settings.testMode.maxFiles);
-            console.log(`Deep Insight AI: Limited to ${limitedFiles.length} files for testing`);
+            console.log(`Deep Insight: Limited to ${limitedFiles.length} files for testing`);
             return limitedFiles;
         }
 
@@ -45,7 +45,7 @@ export class TestModeManager {
         const charLimit = settings.testMode.maxTokens * charsPerToken;
         const truncatedContent = content.slice(0, charLimit);
         
-        console.log('Deep Insight AI: Content truncated for testing', {
+        console.log('Deep Insight: Content truncated for testing', {
             originalTokens: estimatedCurrentTokens,
             truncatedTokens: settings.testMode.maxTokens,
             reduction: `${Math.round((1 - settings.testMode.maxTokens / estimatedCurrentTokens) * 100)}%`

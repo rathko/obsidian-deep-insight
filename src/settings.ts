@@ -9,7 +9,7 @@ export class PromptNotesModal extends SuggestModal<TFile> {
         app: App,
         private plugin: DeepInsightAI,
         private onError: (error: Error) => void,
-        private promptType: keyof Pick<DeepInsightAISettings, 'systemPromptPath' | 'userPromptPath' | 'combinationPromptPath'>,
+        private promptType: keyof Pick<DeepInsightAISettings, 'systemPromptPath' | 'userPromptPath'>,
         private onSelect?: () => void
     ) {
         super(app);
@@ -66,8 +66,7 @@ export class PromptNotesModal extends SuggestModal<TFile> {
             
             const promptTypes = {
                 systemPromptPath: 'System',
-                userPromptPath: 'User',
-                combinationPromptPath: 'Combination'
+                userPromptPath: 'User'
             };
             new Notice(`${promptTypes[this.promptType]} prompt set to: ${file.basename}`);
             this.onSelect?.();
@@ -228,24 +227,17 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         await Promise.all([
             this.createPromptSection(
                 containerEl,
-                'System Prompt',
-                'Defines how the AI should process notes',
-                'systemPromptPath',
-                'defaultSystemPrompt'
-            ),
-            this.createPromptSection(
-                containerEl,
                 'User Prompt',
-                'Defines what specific insight to generate',
+                'Defines your mission, goals and beliefs',
                 'userPromptPath',
                 'defaultUserPrompt'
             ),
             this.createPromptSection(
                 containerEl,
-                'Combination Prompt',
-                'Defines how to merge and organize tasks from multiple chunks',
-                'combinationPromptPath',
-                'defaultCombinationPrompt'
+                'System Prompt',
+                'Defines how the AI should process the Vault notes',
+                'systemPromptPath',
+                'defaultSystemPrompt'
             )
         ]);
     }
@@ -254,8 +246,8 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         containerEl: HTMLElement,
         title: string,
         description: string,
-        pathSetting: keyof Pick<DeepInsightAISettings, 'systemPromptPath' | 'userPromptPath' | 'combinationPromptPath'>,
-        defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt' | 'defaultCombinationPrompt'>
+        pathSetting: keyof Pick<DeepInsightAISettings, 'systemPromptPath' | 'userPromptPath'>,
+        defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt'>
     ): Promise<void> {
         const container = containerEl.createDiv({
             cls: 'deep-insight-ai-prompt-container'
@@ -289,8 +281,8 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         container: HTMLElement,
         notePath: string,
         title: string,
-        pathSetting: keyof Pick<DeepInsightAISettings, 'systemPromptPath' | 'userPromptPath' | 'combinationPromptPath'>,
-        defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt' | 'defaultCombinationPrompt'>
+        pathSetting: keyof Pick<DeepInsightAISettings, 'systemPromptPath' | 'userPromptPath'>,
+        defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt'>
     ): void {
         new Setting(container)
             .setName(title)
@@ -334,8 +326,8 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         notePath: string,
         noteContent: string,
         title: string,
-        pathSetting: keyof Pick<DeepInsightAISettings, 'systemPromptPath' | 'userPromptPath' | 'combinationPromptPath'>,
-        defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt' | 'defaultCombinationPrompt'>
+        pathSetting: keyof Pick<DeepInsightAISettings, 'systemPromptPath' | 'userPromptPath'>,
+        defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt'>
     ): Promise<void> {
         new Setting(container)
             .addButton(button => button
@@ -368,14 +360,12 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         this.createPromptTextArea(container, notePath, noteContent, defaultSetting);
     }
 
-    private getPromptType(defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt' | 'defaultCombinationPrompt'>): keyof typeof DEFAULT_PROMPTS {
+    private getPromptType(defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt'>): keyof typeof DEFAULT_PROMPTS {
         switch (defaultSetting) {
             case 'defaultSystemPrompt':
                 return 'system';
             case 'defaultUserPrompt':
                 return 'user';
-            case 'defaultCombinationPrompt':
-                return 'combination';
         }
     }
 
@@ -383,7 +373,7 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         container: HTMLElement,
         notePath: string,
         noteContent: string,
-        defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt' | 'defaultCombinationPrompt'>
+        defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt' >
     ): void {
         const promptContainer = container.createDiv({
             cls: 'deep-insight-ai-prompt-textarea-container'

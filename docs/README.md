@@ -11,10 +11,10 @@
    npm install
    npm run build
    ```
-3. Reopen Obsidian, "Deep Insight AI" should be accessible in settings (make sure "Community Plugins" are enabled and enable Deep Insight AI in the installed plugins)
-4. Configure "Deep Insight AI" with your Anthropic or OpenAI API key
+3. Reopen Obsidian, "Deep Insight" should be accessible in settings (make sure "Community Plugins" are enabled and enable Deep Insight in the installed plugins)
+4. Configure "Deep Insight" with your Anthropic or OpenAI API key
 
-# Deep Insight AI Plugin - Release Guide
+# Deep Insight Plugin - Release Guide
 
 ## Steps to Release a New Version
 

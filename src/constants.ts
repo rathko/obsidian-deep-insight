@@ -10,12 +10,10 @@ export const DEFAULT_SETTINGS: DeepInsightAISettings = {
     },
     systemPromptPath: '',
     userPromptPath: '',
-    combinationPromptPath: '',
     excludeFolders: ['templates', 'archive'],
     maxTokensPerRequest: 90000,
     defaultSystemPrompt: DEFAULT_PROMPTS.system,
     defaultUserPrompt: DEFAULT_PROMPTS.user,
-    defaultCombinationPrompt: DEFAULT_PROMPTS.combination,
     retryAttempts: 1,
     showCostSummary: true,
     testMode: {

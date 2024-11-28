@@ -18,12 +18,10 @@ export interface DeepInsightAISettings {
     provider: AIProviderSettings;
     systemPromptPath: string;
     userPromptPath: string;
-    combinationPromptPath: string;
     excludeFolders: string[];
     maxTokensPerRequest: number;
     defaultSystemPrompt: string;
     defaultUserPrompt: string;
-    defaultCombinationPrompt: string;
     retryAttempts: number;
     showCostSummary: boolean;
     testMode: {

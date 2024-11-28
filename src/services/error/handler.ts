@@ -15,7 +15,7 @@ export class ErrorHandler {
         if (error instanceof DeepInsightError) {
             const message = this.getErrorMessage(error);
             new Notice(message, 5000);
-            console.error('Deep Insight AI Error:', {
+            console.error('Deep Insight Error:', {
                 type: error.error.type,
                 message: error.error.message,
                 context: error.error.context

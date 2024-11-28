@@ -53,16 +53,7 @@ export default class DeepInsightAI extends Plugin {
     }
 
     async generateTasks(editor: Editor): Promise<void> {
-        if (this.isProcessing) {
-            new Notice('Already processing notes. Please wait...');
-            return;
-        }
-
-        if (!InputValidator.validateApiKey(
-            this.settings.provider.apiKey, 
-            this.settings.provider.type
-        )) {
-            new Notice(`Please set a valid ${this.settings.provider.type} API key in settings`);
+        if (!this.validatePrerequisites()) {
             return;
         }
 
@@ -75,6 +66,23 @@ export default class DeepInsightAI extends Plugin {
         } finally {
             this.isProcessing = false;
         }
+    }
+
+    private validatePrerequisites(): boolean {
+        if (this.isProcessing) {
+            new Notice('Already processing notes. Please wait...');
+            return false;
+        }
+
+        if (!InputValidator.validateApiKey(
+            this.settings.provider.apiKey, 
+            this.settings.provider.type
+        )) {
+            new Notice(`Please set a valid ${this.settings.provider.type} API key in settings`);
+            return false;
+        }
+
+        return true;
     }
 
     private async processNotes(editor: Editor): Promise<void> {
@@ -91,26 +99,41 @@ export default class DeepInsightAI extends Plugin {
         );
 
         const chunks = await contentProcessor.processContent();
+        await this.handleCostEstimate(chunks.length);
+        
+        const result = chunks.length === 1 
+            ? await this.processChunk(chunks[0].content) 
+            : await this.processChunks(chunks);
 
-        if (this.settings.showCostSummary && this.costTracker) {
-            const costEstimate = this.costTracker.generateInitialCostEstimate(chunks.length);
-            new Notice(costEstimate, 10000);
-        }
-
-        if (chunks.length === 1) {
-            const result = await this.processChunk(chunks[0].content);
-            await this.insertTasks(editor, result);
-            this.showSuccessMessage();
-            return;
-        }
-
-        const results = await this.processMultipleChunks(chunks);
-        const combinedResult = await this.combineResults(results);
-        await this.insertTasks(editor, combinedResult);
+        await this.insertTasks(editor, result);
         this.showSuccessMessage();
     }
 
-    private async processChunk(content: string): Promise<string> {
+    private async handleCostEstimate(chunkCount: number): Promise<void> {
+        if (this.settings.showCostSummary && this.costTracker) {
+            const costEstimate = this.costTracker.generateInitialCostEstimate(chunkCount);
+            new Notice(costEstimate, 10000);
+        }
+    }
+
+    private async getPrompts(): Promise<{ systemPrompt: string; userPrompt: string }> {
+        const [systemPrompt, userPrompt] = await Promise.all([
+            PromptManager.loadPromptTemplate(
+                this.app.vault,
+                this.settings.systemPromptPath,
+                this.settings.defaultSystemPrompt
+            ),
+            PromptManager.loadPromptTemplate(
+                this.app.vault,
+                this.settings.userPromptPath,
+                this.settings.defaultUserPrompt
+            )
+        ]);
+
+        return { systemPrompt, userPrompt };
+    }
+
+    private async processChunk(content: string, isCombining = false): Promise<string> {
         if (!this.provider) {
             throw new DeepInsightError({
                 type: 'PROCESSING_ERROR',
@@ -118,21 +141,14 @@ export default class DeepInsightAI extends Plugin {
             });
         }
 
-        const systemPrompt = await PromptManager.loadPromptTemplate(
-            this.app.vault,
-            this.settings.systemPromptPath,
-            this.settings.defaultSystemPrompt
-        );
-
-        const userPrompt = await PromptManager.loadPromptTemplate(
-            this.app.vault,
-            this.settings.userPromptPath,
-            this.settings.defaultUserPrompt
-        );
+        const { systemPrompt, userPrompt } = await this.getPrompts();
+        const promptContent = isCombining 
+            ? content 
+            : `Notes Content:\n${content}`;
 
         const messages: AIMessage[] = [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `${userPrompt}\n\nNotes Content:\n${content}` }
+            { role: 'user', content: `${userPrompt}\n\n${promptContent}` }
         ];
 
         const response = await this.provider.generateResponse(messages);
@@ -144,9 +160,9 @@ export default class DeepInsightAI extends Plugin {
         return response.content;
     }
 
-    private async processMultipleChunks(
+    private async processChunks(
         chunks: { content: string; size: number }[]
-    ): Promise<string[]> {
+    ): Promise<string> {
         const results: string[] = [];
 
         for (let i = 0; i < chunks.length; i++) {
@@ -155,71 +171,35 @@ export default class DeepInsightAI extends Plugin {
             ];
             
             new Notice(`${randomMessage} (${i + 1}/${chunks.length})`);
-
             const result = await this.processChunk(chunks[i].content);
             results.push(result);
         }
 
-        return results;
-    }
-
-    private async combineResults(results: string[]): Promise<string> {
-        if (results.length === 1) {
-            return results[0];
-        }
-
-        if (!this.provider) {
-            throw new DeepInsightError({
-                type: 'PROCESSING_ERROR',
-                message: 'AI provider not initialized'
-            });
-        }
-
         new Notice(UI_MESSAGES.COMBINING);
-
-        const combinationPrompt = await PromptManager.loadPromptTemplate(
-            this.app.vault,
-            this.settings.combinationPromptPath,
-            this.settings.defaultCombinationPrompt
-        );
-
-        const messages: AIMessage[] = [
-            { role: 'system', content: combinationPrompt },
-            { 
-                role: 'user', 
-                content: results.join('\n\n=== Next Section ===\n\n')
-            }
-        ];
-
-        const response = await this.provider.generateResponse(messages);
+        const combinedContent = results.join('\n\n=== Next Section ===\n\n');
         
-        if (this.costTracker && response.usage) {
-            this.costTracker.addUsage(response.usage);
-        }
-
-        return response.content;
+        return this.processChunk(combinedContent, true);
     }
 
     private async insertTasks(editor: Editor, content: string): Promise<void> {
         const formattedDate = window.moment().format('YYYY-MM-DD');
-        const header = `## Generated Tasks (${formattedDate})\n\n`;
-        const contentToInsert = '\n\n' + header + content + '\n';
+        const contentToInsert = `\n\n## Generated Tasks (${formattedDate})\n\n${content}\n`;
         
         const cursor = editor.getCursor();
         
         if (cursor && typeof cursor.line === 'number' && typeof cursor.ch === 'number') {
             editor.replaceRange(contentToInsert, cursor);
-        } else {
-            // If no valid cursor position, append to the end of the document
-            const lastLine = editor.lastLine();
-            const lastLineContent = editor.getLine(lastLine);
-            
-            const extraNewline = lastLineContent.trim() ? '\n' : '';
-            editor.replaceRange(extraNewline + contentToInsert, {
-                line: lastLine,
-                ch: lastLineContent.length
-            });
+            return;
         }
+
+        const lastLine = editor.lastLine();
+        const lastLineContent = editor.getLine(lastLine);
+        const extraNewline = lastLineContent.trim() ? '\n' : '';
+        
+        editor.replaceRange(extraNewline + contentToInsert, {
+            line: lastLine,
+            ch: lastLineContent.length
+        });
     }
 
     private showSuccessMessage(): void {

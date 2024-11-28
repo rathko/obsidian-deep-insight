@@ -1,16 +1,16 @@
-# Deep Insight AI
+# Deep Insight
 
 ### Unlock actionable tasks and insights from your Obsidian notes with the power of AI.
 
-**Deep Insight AI** plugin taps into the power of AI to sift through all your Markdown notes in [Obsidian](https://obsidian.md/), surfacing actionable insights and tasks.
+**Deep Insight** plugin taps into the power of AI to sift through all your Markdown notes in [Obsidian](https://obsidian.md/), surfacing actionable insights and tasks.
 
 Here's an example:
 
-![Deep Insight AI Demo](docs/deep-insight-ai-demo.gif)
+![Deep Insight Demo](docs/deep-insight-ai-demo.gif)
 
-Overwhelmed by scattered tasks, deadlines, and ideas across your vault? Let Deep Insight AI become your personal assistant to ensure nothing is overlooked.
+Overwhelmed by scattered tasks, deadlines, and ideas across your vault? Let Deep Insight become your personal assistant to ensure nothing is overlooked.
 
-## Why Deep Insight AI?
+## Why Deep Insight?
 
 Your vault likely holds:
 - Tasks and commitments lost in daily notes
@@ -19,7 +19,7 @@ Your vault likely holds:
 - Patterns and themes you haven't noticed
 - Follow-ups that need your attention
 
-Deep Insight AI makes manual review a thing of the past:
+Deep Insight makes manual review a thing of the past:
 - Analyzes every Markdown note using customizable AI prompts
 - Extracts actionable items based on your queries
 - Spots recurring themes and big-picture patterns
@@ -42,7 +42,7 @@ It's like having a personal assistant that reads your entire vault, understands 
 
 1. Open Obsidian Settings
 2. Navigate to "Community Plugins" and enable it
-3. Click "Browse" and search for "Deep Insight AI"
+3. Click "Browse" and search for "Deep Insight"
 4. Click "Install" and enable the plugin
 
 Note: Alternatively, see [docs](./docs) on how to install latest version manually.
@@ -55,7 +55,9 @@ Note: Alternatively, see [docs](./docs) on how to install latest version manuall
 4. Configure additional settings:
    - Choose either Claude Sonnet, Haiku models or GPT 4o/mini model
    - Exclude certain folders if needed
-   - Customize prompts (System, User, Combination)
+   - Customize prompts
+      - **User prompt is where you define your mission, goals and beliefs** and any additional instructions. You are encouraged to change this prompt. 
+      - System prompt defines how Deep Insight will process the files
    - Enable cost tracking for AI estimates (enabled by default)
 5. Access advanced settings:
    - Test mode to reduce costs during experimentation with prompts
@@ -67,7 +69,7 @@ Note: Alternatively, see [docs](./docs) on how to install latest version manuall
 1. Open any note where you want to insert generated tasks (like your daily note)
 2. Select with the cursos the location where generated tasks should be inserted
 3. Open the Command Palette (Cmd/Ctrl + P)
-4. Search for "Deep Insight AI: Generate Insights from Notes"
+4. Search for "Deep Insight: Generate Insights from Notes"
 5. The plugin will generate tasks/insights and insert them in your chosen location
 
 *Note: Only markdown files (.md) are analyzed; other file types like PDFs, images, etc., are excluded.*
@@ -78,9 +80,8 @@ Note: Alternatively, see [docs](./docs) on how to install latest version manuall
 
 Tailor the behavior of the AI by adjusting the types of prompts used in your workflow:
 
-- **System Prompt:** Defines how the AI approaches analysis—like instructions for a personal assistant. Customize to set task formats, note categorizations, priorities, and style. Here is where you define **your purpose and goals**.
-- **User Prompt:** Asks the assistant for specific insights or tasks. E.g., extract project deadlines, summarize ideas, or find research notes.
-- **Combination Prompt:** Prompt used for combining insights from large vaults processed over multiple chunks / batches.
+- **System Prompt:** Defines how the AI approaches analysis—like instructions for a personal assistant. Customize to set task formats, note categorizations, priorities, and style.
+- **User Prompt:** Here is where you define **your mission, purpose, goals and beliefs** and any additional instructions
 
 ### How to Set Custom Prompts
 
