@@ -182,13 +182,13 @@ export default class DeepInsightAI extends Plugin {
     }
 
     private async insertTasks(editor: Editor, content: string): Promise<void> {
-        const formattedDate = window.moment().format('YYYY-MM-DD');
-        const contentToInsert = `\n\n## Generated Tasks (${formattedDate})\n\n${content}\n`;
+        // const formattedDate = window.moment().format('YYYY-MM-DD');
+        // const contentToInsert = `\n\n${content}\n`;
         
         const cursor = editor.getCursor();
         
         if (cursor && typeof cursor.line === 'number' && typeof cursor.ch === 'number') {
-            editor.replaceRange(contentToInsert, cursor);
+            editor.replaceRange(content, cursor);
             return;
         }
 
@@ -196,7 +196,7 @@ export default class DeepInsightAI extends Plugin {
         const lastLineContent = editor.getLine(lastLine);
         const extraNewline = lastLineContent.trim() ? '\n' : '';
         
-        editor.replaceRange(extraNewline + contentToInsert, {
+        editor.replaceRange(extraNewline + content, {
             line: lastLine,
             ch: lastLineContent.length
         });

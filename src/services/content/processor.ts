@@ -42,7 +42,7 @@ export class ContentChunker {
     async createChunks(files: TFile[], vault: Vault): Promise<Array<{ content: string; size: number }>> {
         const maxContentTokens = this.calculateMaxContentTokens();
         const chunks: Array<{ content: string; size: number }> = [];
-        let currentFiles: Array<{ path: string; content: string }> = [];
+        let currentFiles: Array<{ file: TFile; content: string }> = [];
         let currentTokens = 0;
 
         for (const file of files) {
@@ -64,12 +64,12 @@ export class ContentChunker {
                         currentTokens = 0;
                         this.resetDocumentIndex();
                     }
-                    chunks.push(...this.splitLargeContent(file.path, content.trim(), maxContentTokens));
+                    chunks.push(...this.splitLargeContent(file, content.trim(), maxContentTokens));
                     continue;
                 }
             }
 
-            currentFiles.push({ path: file.path, content: content.trim() });
+            currentFiles.push({ file, content: content.trim() });
             currentTokens += tokens;
         }
 
@@ -91,7 +91,7 @@ export class ContentChunker {
         return Math.min(maxAllowedTokens - overheadTokens, TOKEN_LIMITS.CHUNK_SIZE);
     }
 
-    private createChunk(files: { path: string; content: string }[]): { content: string; size: number } {
+    private createChunk(files: Array<{ file: TFile; content: string }>): { content: string; size: number } {
         const content = this.formatToXML(files);
         return {
             content,
@@ -99,25 +99,29 @@ export class ContentChunker {
         };
     }
 
-    // Apply https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/long-context-tips
-    // to both Anthropic and OpenAI
-    private formatToXML(files: { path: string; content: string }[]): string {
+    private formatCreationDate(timestamp: number): string {
+        return new Date(timestamp).toISOString().split('T')[0];
+    }
+
+    private formatToXML(files: Array<{ file: TFile; content: string }>): string {
         const documents = files
-            .map(file => this.createDocumentXML(file.path, file.content))
+            .map(({ file, content }) => this.createDocumentXML(file, content))
             .join('\n');
         return `<documents>\n${documents}\n</documents>`;
     }
 
-    private createDocumentXML(path: string, content: string): string {
+    private createDocumentXML(file: TFile, content: string): string {
+        const creationDate = this.formatCreationDate(file.stat.ctime);
         return `<document index="${this.documentIndex++}">
-    <source>${path}</source>
+    <source>${file.path}</source>
+    <created>${creationDate}</created>
     <document_content>
 ${content}
     </document_content>
 </document>`;
     }
 
-    private splitLargeContent(path: string, content: string, maxTokens: number): Array<{ content: string; size: number }> {
+    private splitLargeContent(file: TFile, content: string, maxTokens: number): Array<{ content: string; size: number }> {
         const chunks: Array<{ content: string; size: number }> = [];
         let remaining = content;
         const maxChars = maxTokens * ContentChunker.CHARS_PER_TOKEN;
@@ -127,7 +131,7 @@ ${content}
             remaining = remaining.slice(maxChars);
 
             if (chunk.length > 0) {
-                chunks.push(this.createChunk([{ path, content: chunk }]));
+                chunks.push(this.createChunk([{ file, content: chunk }]));
             }
         }
 
