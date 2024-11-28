@@ -1,6 +1,6 @@
 {
     "name": "deep-insight-ai",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "Unlock actionable tasks and insights from your Obsidian notes with the power of AI.",
     "main": "main.js",
     "scripts": {
