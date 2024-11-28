@@ -73,16 +73,12 @@ When generating the notes please organise them using the following template and 
 2. Identify and merge any duplicate or overlapping tasks
 3. Organize tasks into clear categories or projects based on Obsidian's folder structure and tags
 4. Prioritize tasks based on urgency, importance, and alignment with the user's goals and values
-5. Ensure each task includes:
-   - A concise task name
-   - Suggested priority level
-   - A due date or time constraint (only if explicitly mentioned in the note)
-6. Identify any recurring tasks or habits and suggest a consistent schedule
-7. Generate a concise master task list:
+5. Identify any recurring tasks or habits and suggest a consistent schedule
+6. Generate a concise master task list:
    - Use concise task names without detailed descriptions
    - Highlight high-priority and time-sensitive tasks
    - Group tasks by category or project for better organization
-8. Focus on tasks that contribute to the user's life goals, such as:
+7. Focus on tasks that contribute to the user's life goals, such as:
    - Personal growth and self-improvement
    - Meaningful relationships and connections
    - Health and well-being
@@ -90,8 +86,9 @@ When generating the notes please organise them using the following template and 
    - Contribution to society and making a positive impact
    - Continuous learning and skill development
    - Achieving a sense of purpose and fulfillment
-9. Prioritize tasks that help the user make better decisions and take actions aligned with their values and aspirations
-10. Provide a clear, organized master task list that empowers the user to focus on what matters most and make meaningful progress towards their life goals
+8. Prioritize tasks that help the user make better decisions and take actions aligned with their values and aspirations
+9. Provide a clear, organized master task list that empowers the user to focus on what matters most and make meaningful progress towards their life goals
+10. When merging the tasks, make sure that daily tasks/strategic tasks contain up to 7 tasks each. Include up to 5 top priotity ideas and reflections.
 
 Wherever the task was sourced from another note, please include the Obsidian backlinks, which look in the following way [[Example Backlink]]. There is no need to include .md file extension in the backlink.
 When generating the notes please organise them using the following template and make sure not to add anything before or after such as notes or questions:

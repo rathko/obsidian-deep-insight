@@ -31,11 +31,11 @@ It's like having a personal assistant that reads your entire vault, understands 
 
 ## Key Features
 
-- 🤖 Powered by Claude 3.5 and OpenAI 4o AI models (Sonnet, Haiku, 4o and 4o mini)
+- 🤖 Powered by Claude 3.5 and OpenAI 4o AI models (Sonnet, Haiku, GPT-4o and GPT-4o mini)
 - 📝 Analyzes every Markdown file in your vault (you can exclude folders via settings)
 - ✅ Extracts tasks and actionable insights using customisable prompts
-- 🎯 Prioritization based on note context
-- ⚡ Processes large vaults in manageable chunks
+- 🎯 Prioritizes tasks based on note context
+- ⚡ Processes large vaults in manageable chunks / batches
 - 💰 Provides cost estimates for AI usage
 
 ## Installation
@@ -135,8 +135,13 @@ A: Chunking (batching) helps by processing notes in smaller sections to:
 2. Stay within API context token limits
 3. Maintain context across related notes
 
+It might take a while to process a very large vault. For best results think carefully whether there are more folders you can exclude from processing. Using more affordable model (GPT4o mini or Haiku can also help reduce costs). 
+
 ### Q: Can I integrate other AI models?
 A: The plugin currently supports Claude 3.5 and OpenAI GPT4o models. Pull requests are gladly accepted!
+
+### Q: Should I use OpenAI or Anthropic?
+A: While both AI providers work quite well, OpenAI tends to have more strict API quotas, especially with the GPT4o model. If you see frequent errors related to hitting OpenAI quota limits, you might try GPTo mini or Anthropic.
 
 ### Q: How is my data handled?
 A: Your notes are only processed between your Obsidian vault and Anthropic (Claude AI) / OpenAI. No data is stored or transmitted elsewhere, ensuring complete privacy.
