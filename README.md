@@ -9,8 +9,6 @@ Here's an example:
 
 ![Deep Insight Demo](docs/deep-insight-ai-demo.gif)
 
-Let Deep Insight be your personal assistant, surfacing the most important insights—aligned with your **goals, values, and beliefs** — so you never lose sight of what truly matters.
-
 ## Your Vault Is a Goldmine — But Are You Missing What Matters?
 
 Inside your vault lies:
@@ -29,7 +27,7 @@ Deep Insight eliminates the chaos and brings clarity:
 - Preserves your folder structure while uncovering value
 - Delivers insights, your way
 
-It’s like having a personal assistant who reads your entire vault, understands your goals, values and beliefs, and highlights only what matters most.
+Let Deep Insight be your personal assistant, surfacing the most important insights—aligned with your **goals, values, and beliefs** — so you never lose sight of what truly matters.
 
 ## Key Features
 
@@ -103,10 +101,6 @@ Tailor the behavior of the AI by adjusting the types of prompts used in your wor
 Contributions are welcomed! For major changes, please start by opening an issue to discuss your ideas.
 For development notes see [docs](./docs)
 
-## License
-
-[MIT](LICENSE)
-
 ## Support 
 
 Encounter an issue? Here’s what you can do:
@@ -152,6 +146,10 @@ A: While both AI providers work quite well, OpenAI tends to have more strict API
 A: Your notes are transferred only between your Obsidian vault and Anthropic's Claude / OpenAI. No data is stored or transmitted elsewhere, ensuring complete privacy.
 
 Both OpenAI and Anthropic do not use data submitted via API for training, unless user specifically opted in.
+
+## License
+
+[MIT](LICENSE)
 
 ## Credits
 
