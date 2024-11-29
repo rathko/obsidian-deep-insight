@@ -9,7 +9,7 @@ Here's an example:
 
 ![Deep Insight Demo](docs/deep-insight-ai-demo.gif)
 
-Drowning in scattered tasks, deadlines, and buried ideas? Let Deep Insight be your personal assistant, surfacing the most important insights—aligned with your **goals, values, and beliefs** — so nothing slips through the cracks.
+Let Deep Insight be your personal assistant, surfacing the most important insights—aligned with your **goals, values, and beliefs** — so you never lose sight of what truly matters.
 
 ## Your Vault Is a Goldmine — But Are You Missing What Matters?
 
@@ -20,10 +20,10 @@ Inside your vault lies:
 - Brilliant ideas waiting to be rediscovered
 - Patterns and themes you haven’t spotted
 - Follow-ups silently slipping through the cracks
-- Deep Insight eliminates the chaos and brings clarity:
 
-Analyzes every Markdown note with AI-driven prompts
-- Extracts actionable tasks tailored to your queries
+Deep Insight eliminates the chaos and brings clarity:
+- Analyzes every Markdown note with AI-driven prompts
+- Extracts actionable tasks tailored to your goals
 - Finds recurring themes and big-picture insights
 - Surfaces forgotten deadlines and overlooked priorities
 - Preserves your folder structure while uncovering value
