@@ -22,11 +22,6 @@ export interface AIProvider {
     getCosts(): ModelConfig;
 }
 
-export interface AIMessage {
-    role: 'system' | 'user' | 'assistant';
-    content: string;
-}
-
 export interface AIUsage {
     inputTokens: number;
     outputTokens: number;

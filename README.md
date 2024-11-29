@@ -1,13 +1,51 @@
-# Deep Insight
+<div align="center">
 
-### Turn Your Obsidian Vault Into Action With AI-Powered Insights
+# `Deep Insight`
 
-**Deep Insight** transforms [Obsidian](https://obsidian.md/) notes into a powerhouse of actionable TODO tasks and ideas, using AI to uncover what truly matters to you.
+![Static Badge](https://img.shields.io/badge/mission-human_flourishing_via_AI_augmentation-purple)
+<br />
+![GitHub top language](https://img.shields.io/github/languages/top/rathko/obsidian-deep-insight)
+![GitHub last commit](https://img.shields.io/github/last-commit/rathko/obsidian-deep-insight)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
+<p class="align center">
+<h4><code>Deep Insight</code> turns your Obsidian vault into action with AI-powered insights.</h4>
+<h4>Transform <a href="https://obsidian.md/">Obsidian</a> notes into a powerhouse of actionable TODO tasks and ideas, use AI to uncover what truly matters to you.</h4>
+</p>
 
-Here's an example:
+[Key Features](#key-features) •
+[Configuration](#configuration) •
+[How to Use](#how-to-use) •
+[Customization](#customization) •
+[FAQ](#faq)
 
-![Deep Insight Demo](docs/deep-insight-ai-demo.gif)
+<br/>
+
+![Screenshot of Deep Insight](docs/deep-insight-ai-demo.gif)
+
+</div>
+
+## Navigation
+- [Deep Insight](#deep-insight)
+  - [Key Features](#key-features)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
+  - [How to Use](#how-to-use)
+  - [Customization](#customization)
+    - [Custom Prompts](#custom-prompts)
+    - [AI Models](#ai-models)
+  - [Contributions](#contributions)
+  - [FAQ](#faq)
+
+## Key Features
+
+- 🤖 Powered by Claude 3.5 and OpenAI GPT-4o AI models (Sonnet, Haiku, GPT-4o and GPT-4o mini)
+- 📝 Analyzes every Markdown file in your vault
+- ✅ Extracts tasks and actionable insights using customisable prompts
+- 🎯 Prioritizes tasks based on note context and your own **core values, goals and beliefs**. 
+- ⚡ Processes large vaults in manageable chunks / batches
+- 💰 Provides cost estimates for AI usage
+- 🧠 Inspired by [Fabric](https://github.com/danielmiessler/fabric), an open-source framework for human-AI augmentation
 
 ## Your Vault Is a Goldmine — But Are You Missing What Matters?
 
@@ -28,15 +66,6 @@ Deep Insight eliminates the chaos and brings clarity:
 - Delivers insights, your way
 
 Let Deep Insight be your personal assistant, surfacing the most important insights—aligned with your **goals, values, and beliefs** — so you never lose sight of what truly matters.
-
-## Key Features
-
-- 🤖 Powered by Claude 3.5 and OpenAI GPT-4o AI models (Sonnet, Haiku, GPT-4o and GPT-4o mini)
-- 📝 Analyzes every Markdown file in your vault
-- ✅ Extracts tasks and actionable insights using customisable prompts
-- 🎯 Prioritizes tasks based on note context and your own **core values, goals and beliefs**. 
-- ⚡ Processes large vaults in manageable chunks / batches
-- 💰 Provides cost estimates for AI usage
 
 ## Installation
 
@@ -119,14 +148,14 @@ A: Check if:
 2. You have an active internet connection
 3. Folders aren’t accidentally excluded in the settings
 
-### Q: How do I align outcomes with my goals and values?
-A: Update the User Prompt in settings or link it to a custom note that reflects your goals and priorities. Use Test Mode to tweak prompts—this processes just a handful of files per run, making it easy to fine-tune the insights to match what truly matters to you.
+### Q: How exactly AI aligns generated actions with my own goals and values?
+A: First step is to define your own mission, goals, values and long term objectives in the User Prompt. Deep Insight plugin will prioritize tasks that directly support your core values and goals. Update the User Prompt in settings or link it to a custom note that reflects your goals and priorities. You can use Test Mode to tweak prompts—this processes just a handful of files per run, making it fast and easy to fine-tune the prompts.
 
 ### Q: What file types does the plugin process?
 A: The plugin only processes Markdown (.md) files. Other file types (images, PDFs, etc.) are ignored to keep the analysis focused and efficient.
 
 ### Q: How expensive is it to run?
-A: It’s affordable with control in your hands. For my own vault with thousands of notes from the last few years - using GPT-4o mini, it’s around $0.15 per run — roughly $5/month for daily reviews. Larger vault? You might want to exclude folders in settings for big savings. Prefer a more advanced and pricier model? Costs can rise. The plugin estimates costs upfront—if it’s too high, close Obsidian while the plugin is running (this will stop processing), reopen and tweak exclusions in settings, and try again.
+A: It’s affordable with control in your hands. For my own vault with thousands of notes from the last few years - using GPT-4o mini, it’s around $0.15 per run — roughly $5/month for daily reviews. Larger vault? You might want to exclude folders in settings for big savings. Prefer a more advanced and pricier model? Costs can rise. The plugin estimates costs upfront—if it’s too high, close Obsidian while the plugin is running (this will stop processing). Reopen, tweak exclusions in settings, and try again.
 
 ### Q: How does chunking work?
 A: Chunking (batching) helps by processing notes in smaller sections to:
@@ -137,7 +166,7 @@ A: Chunking (batching) helps by processing notes in smaller sections to:
 It might take a few minutes to process a larger vault. For best results think carefully whether there are more folders you can exclude from processing. Using more affordable model (GPT-4o mini or Haiku can help reduce costs). 
 
 ### Q: Can I integrate other AI models?
-A: The plugin currently supports Claude 3.5 and OpenAI GPT-4o models. Pull requests are gladly accepted!
+A: The plugin currently supports Claude 3.5 and OpenAI GPT-4o models. Pull requests are gladly accepted.
 
 ### Q: Should I use OpenAI or Anthropic?
 A: While both AI providers work quite well, OpenAI tends to have more strict API quotas, especially with the GPT-4o model. If you see frequent errors related to hitting OpenAI quota limits, you might try GPT-4o mini or Anthropic.
@@ -153,5 +182,5 @@ Both OpenAI and Anthropic do not use data submitted via API for training, unless
 
 ## Credits
 
-Created by Radek Maciaszek
+`Deep Insight` was created by <a href="https://www.linkedin.com/in/radekmaciaszek/" target="_blank">Radek Maciaszek</a> in November of 2024.
 

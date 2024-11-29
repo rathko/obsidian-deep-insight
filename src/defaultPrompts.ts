@@ -79,7 +79,7 @@ Do not include any additional notes before the generated tasks or after the refl
 if you have anything important to add include it in reflections.
 - `,
 
-   user: `The user has provided their Core Values and Goals:
+   user: `The user has provided their Core Values, Goals and Objectives:
 
 1. Personal Growth:
   - Continuous learning and skill development
@@ -100,5 +100,8 @@ if you have anything important to add include it in reflections.
 5. Impact:
   - Contributing to society
   - Making a positive difference
-  - Environmental consciousness`
+  - Environmental consciousness
+
+6. Mission:
+  - Human Flourishing via AI augmentation`
 } as const;

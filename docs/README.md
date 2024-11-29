@@ -27,8 +27,8 @@
 Create an annotated tag that matches the new version number you set in `manifest.json` and `package.json`.
 
 ```bash
-git tag -a 1.0.4 -m "Release version 1.0.4"
-git push origin 1.0.4
+git tag -a 1.0.5 -m "Release version 1.0.5"
+git push origin 1.0.5
 ```
 
 ### 4. Monitor the GitHub Action Workflow

@@ -70,12 +70,14 @@ export const MODEL_CONFIGS: Record<string, ModelConfig> = {
 export const API_CONSTANTS = {
     anthropic: {
         BASE_URL: 'https://api.anthropic.com/v1/messages',
+        REQUEST_API_KEY: 'https://console.anthropic.com/settings/keys',
         API_VERSION: '2023-06-01',
         MAX_OUTPUT_TOKENS: 4000,
         CHARS_PER_TOKEN: 4
     },
     openai: {
         BASE_URL: 'https://api.openai.com/v1/chat/completions',
+        REQUEST_API_KEY: 'https://platform.openai.com/api-keys',
         MAX_OUTPUT_TOKENS: 4096,
         CHARS_PER_TOKEN: 4
     }

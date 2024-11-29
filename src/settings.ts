@@ -1,7 +1,7 @@
 import { App, Notice, Setting, PluginSettingTab, TFile, SuggestModal, DropdownComponent } from 'obsidian';
 import { DEFAULT_PROMPTS } from './defaultPrompts';
 import { AIProvider, AIModel, DeepInsightAISettings } from './types';
-import { AI_MODELS } from './constants';
+import { AI_MODELS, API_CONSTANTS } from './constants';
 import type DeepInsightAI from './main';
 
 export class PromptNotesModal extends SuggestModal<TFile> {
@@ -107,18 +107,30 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         const providerSetting = new Setting(containerEl)
             .setName('AI Provider')
             .setDesc('Select your AI provider');
-
+    
         const modelSetting = new Setting(containerEl)
             .setName('Model')
             .setDesc('Select the model to use')
             .setClass('model-setting');
-
+    
         const apiKeySetting = new Setting(containerEl)
-            .setName('API Key')
-            .setDesc(`Your ${this.plugin.settings.provider.type} API key`);
-
+            .setName('API Key');
+    
         let modelDropdownComponent: DropdownComponent;
-
+    
+        const updateAPIKeyDesc = (provider: AIProvider) => {
+            const fragment = document.createDocumentFragment();
+            fragment.appendText('Get your API key from ');
+            fragment.createEl('a', {
+                text: provider === 'anthropic' ? 'Anthropic' : 'OpenAI',
+                href: API_CONSTANTS[provider].REQUEST_API_KEY
+            });
+            apiKeySetting.setDesc(fragment);
+        };
+    
+        // Initial API key description setup
+        updateAPIKeyDesc(this.plugin.settings.provider.type);
+    
         providerSetting.addDropdown(dropdown => {
             dropdown.addOptions({
                 anthropic: 'Anthropic',
@@ -137,10 +149,10 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
                 await this.plugin.saveSettings();
                 
                 this.updateModelDropdown(modelDropdownComponent, providerValue);
-                apiKeySetting.setDesc(`Your ${providerValue} API key`);
+                updateAPIKeyDesc(providerValue);
             });
         });
-
+    
         modelSetting.addDropdown(dropdown => {
             modelDropdownComponent = dropdown;
             this.updateModelDropdown(dropdown, this.plugin.settings.provider.type);
@@ -151,7 +163,7 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
                 await this.plugin.saveSettings();
             });
         });
-
+    
         apiKeySetting.addText(text => text
             .setPlaceholder('Enter your API key')
             .setValue(this.plugin.settings.provider.apiKey)
@@ -281,8 +293,7 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         container: HTMLElement,
         notePath: string,
         title: string,
-        pathSetting: keyof Pick<DeepInsightAISettings, 'systemPromptPath' | 'userPromptPath'>,
-        defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt'>
+        pathSetting: keyof Pick<DeepInsightAISettings, 'systemPromptPath' | 'userPromptPath'>
     ): void {
         new Setting(container)
             .setName(title)
@@ -352,12 +363,19 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
                     this.display();
                     new Notice(`${title} reset to default`);
                 }));
-
+    
         if (notePath) {
-            this.createNotePathUI(container, notePath, title, pathSetting, defaultSetting);
+            this.createNotePathUI(container, notePath, title, pathSetting);
         }
-
-        this.createPromptTextArea(container, notePath, noteContent, defaultSetting);
+    
+        // Pass DEFAULT_PROMPTS as fallback when creating text area
+        this.createPromptTextArea(
+            container,
+            notePath,
+            noteContent,
+            defaultSetting,
+            DEFAULT_PROMPTS[this.getPromptType(defaultSetting)]
+        );
     }
 
     private getPromptType(defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt'>): keyof typeof DEFAULT_PROMPTS {
@@ -373,34 +391,44 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         container: HTMLElement,
         notePath: string,
         noteContent: string,
-        defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt' >
+        defaultSetting: keyof Pick<DeepInsightAISettings, 'defaultSystemPrompt' | 'defaultUserPrompt'>,
+        defaultPrompt: string
     ): void {
         const promptContainer = container.createDiv({
             cls: 'deep-insight-ai-prompt-textarea-container'
         });
-
+    
         if (notePath) {
             promptContainer.createEl('div', {
                 cls: 'deep-insight-ai-prompt-message',
                 text: '💡 This prompt is managed through the linked note above. Click the note link to edit.'
             });
         }
-
+    
         const textarea = promptContainer.createEl('textarea', {
             cls: 'deep-insight-ai-prompt-textarea'
         });
-
-        textarea.value = notePath ? noteContent : this.plugin.settings[defaultSetting];
+    
+        // Use the stored setting if it exists, otherwise use the default
+        const currentValue = notePath ? noteContent : (this.plugin.settings[defaultSetting] ?? defaultPrompt);
+        textarea.value = currentValue;
         textarea.disabled = !!notePath;
         textarea.placeholder = notePath 
             ? 'This prompt is managed through the linked note. Click the note link above to edit.'
             : 'Enter default prompt';
-
+    
+        // Only save if the value actually changed and differs from default
         textarea.addEventListener('change', async (e) => {
             if (!notePath) {
                 const target = e.target as HTMLTextAreaElement;
-                this.plugin.settings[defaultSetting] = target.value;
-                await this.plugin.saveSettings();
+                if (target.value !== currentValue && target.value !== defaultPrompt) {
+                    this.plugin.settings[defaultSetting] = target.value;
+                    await this.plugin.saveSettings();
+                } else if (target.value === defaultPrompt) {
+                    // If user changed it back to default, remove the stored setting
+                    delete this.plugin.settings[defaultSetting];
+                    await this.plugin.saveSettings();
+                }
             }
         });
     }

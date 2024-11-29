@@ -1,22 +1,27 @@
 {
-    "name": "deep-insight-ai",
+    "name": "deep-insight",
     "version": "1.0.4",
     "description": "AI-Powered Insights and Actions from Your Obsidian Notes. Transform Your Notes to TODOs with Claude or GPT LLMs.",
     "main": "main.js",
+    "type": "module",
     "scripts": {
         "dev": "node esbuild.config.mjs",
         "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
         "version": "node version-bump.mjs",
-        "lint": "eslint . --ext .ts"
+        "lint": "eslint 'src/**/*.ts'",
+        "clean": "rimraf dist"
     },
     "devDependencies": {
+        "@eslint/js": "^8.56.0",
         "@types/node": "^20.17.6",
-        "@typescript-eslint/eslint-plugin": "^6.7.0",
-        "@typescript-eslint/parser": "^6.7.0",
+        "@typescript-eslint/eslint-plugin": "^8.16.0",
+        "@typescript-eslint/parser": "^8.16.0",
         "builtin-modules": "^3.3.0",
         "esbuild": "^0.19.4",
-        "eslint": "^8.50.0",
+        "eslint": "^9.15.0",
+        "globals": "^15.12.0",
         "obsidian": "^1.4.11",
+        "rimraf": "^5.0.5",
         "tslib": "2.6.2",
         "typescript": "5.2.2"
     },

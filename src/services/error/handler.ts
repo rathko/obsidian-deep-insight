@@ -15,11 +15,22 @@ export class ErrorHandler {
         if (error instanceof DeepInsightError) {
             const message = this.getErrorMessage(error);
             new Notice(message, 5000);
-            console.error('Deep Insight Error:', {
+            
+            const errorLog: {
+                type: ErrorType;
+                message: string;
+                context?: unknown;
+            } = {
                 type: error.error.type,
                 message: error.error.message,
-                context: error.error.context
-            });
+            };
+
+            // Only add context if it exists
+            if (error.error.context !== undefined) {
+                errorLog.context = error.error.context;
+            }
+
+            console.error('Deep Insight Error:', errorLog);
         } else {
             new Notice('An unexpected error occurred', 5000);
             console.error('Unexpected error:', error);

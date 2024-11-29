@@ -4,10 +4,6 @@ import { API_CONSTANTS } from '../../constants';
 import { BaseAIProvider } from './baseProvider';
 
 export class AnthropicProvider extends BaseAIProvider {
-    constructor() {
-        super();
-    }
-
     initialize(config: AIProviderConfig): void {
         this.apiKey = config.apiKey;
         this.model = config.model;
@@ -47,13 +43,7 @@ export class AnthropicProvider extends BaseAIProvider {
 
     private parseResponse(response: RequestUrlResponse): AIResponse {
         if (response.status !== 200) {
-            let errorMessage = 'API request failed';
-            try {
-                const data = JSON.parse(response.text);
-                errorMessage = data.error?.message || `API request failed with status ${response.status}`;
-            } catch (e) {
-                errorMessage = `API request failed with status ${response.status}`;
-            }
+            const errorMessage = this.getErrorMessage(response);
             throw new Error(errorMessage);
         }
     
@@ -69,6 +59,15 @@ export class AnthropicProvider extends BaseAIProvider {
                 outputTokens: data.usage.output_tokens
             } : undefined
         };
+    }
+
+    private getErrorMessage(response: RequestUrlResponse): string {
+        try {
+            const data = JSON.parse(response.text);
+            return data.error?.message || `API request failed with status ${response.status}`;
+        } catch {
+            return `API request failed with status ${response.status}`;
+        }
     }
 
     estimateTokens(text: string): number {
