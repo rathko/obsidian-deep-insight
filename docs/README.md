@@ -14,6 +14,11 @@
 3. Reopen Obsidian, "Deep Insight" should be accessible in settings (make sure "Community Plugins" are enabled and enable Deep Insight in the installed plugins)
 4. Configure "Deep Insight" with your Anthropic or OpenAI API key
 
+## Rebuilding Fabric patterns from upstream
+
+1. Clonse Fabric repository `git clone git@github.com:danielmiessler/fabric.git`
+2. Copy fabric patterns to the plugin folder: `cp -R ./fabric/patterns ./`
+
 # Deep Insight Plugin - Release Guide
 
 ## Steps to Release a New Version

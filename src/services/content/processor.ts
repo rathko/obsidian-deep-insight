@@ -1,7 +1,9 @@
-import { TFile, Vault } from 'obsidian';
+import { TAbstractFile, TFile, TFolder, Vault } from 'obsidian';
 import { DeepInsightAISettings } from '../../types';
 import { TestModeManager } from '../test/testManager';
 import { TOKEN_LIMITS, MODEL_CONFIGS } from '../../constants';
+
+// src/services/content/processor.ts
 
 export class ContentProcessor {
     constructor(
@@ -10,9 +12,13 @@ export class ContentProcessor {
         private testManager: TestModeManager
     ) {}
 
-    async processContent(): Promise<{ content: string; size: number }[]> {
-        const files = this.testManager.applyTestLimits(
-            this.getFilteredFiles(),
+    async processContent(target?: TAbstractFile): Promise<{ content: string; size: number }[]> {
+        const files = target 
+            ? await this.getTargetFiles(target)
+            : this.getFilteredFiles();
+
+        const processableFiles = this.testManager.applyTestLimits(
+            files,
             this.settings
         );
 
@@ -20,7 +26,33 @@ export class ContentProcessor {
             this.settings.maxTokensPerRequest,
             MODEL_CONFIGS[this.settings.provider.model].contextWindow
         );
-        return chunker.createChunks(files, this.vault);
+        return chunker.createChunks(processableFiles, this.vault);
+    }
+
+    private async getTargetFiles(target: TAbstractFile): Promise<TFile[]> {
+        if (target instanceof TFile) {
+            return [target];
+        }
+        
+        if (target instanceof TFolder) {
+            return await this.getAllFilesInFolder(target);
+        }
+        
+        return [];
+    }
+
+    private async getAllFilesInFolder(folder: TFolder): Promise<TFile[]> {
+        const files: TFile[] = [];
+        
+        for (const child of folder.children) {
+            if (child instanceof TFile && child.extension === 'md') {
+                files.push(child);
+            } else if (child instanceof TFolder) {
+                files.push(...await this.getAllFilesInFolder(child));
+            }
+        }
+        
+        return files;
     }
 
     private getFilteredFiles(): TFile[] {
@@ -112,13 +144,27 @@ export class ContentChunker {
 
     private createDocumentXML(file: TFile, content: string): string {
         const creationDate = this.formatCreationDate(file.stat.ctime);
+        const modifiedDate = this.formatCreationDate(file.stat.mtime);
+        
         return `<document index="${this.documentIndex++}">
     <source>${file.path}</source>
     <created>${creationDate}</created>
+    <modified>${modifiedDate}</modified>
+    <metadata>
+        <folder>${file.parent?.path || ''}</folder>
+        <filename>${file.name}</filename>
+        <tags>${this.extractTags(content)}</tags>
+    </metadata>
     <document_content>
 ${content}
     </document_content>
 </document>`;
+    }
+
+    private extractTags(content: string): string {
+        const tagRegex = /#[^\s#]+/g;
+        const tags = content.match(tagRegex) || [];
+        return tags.join(' ');
     }
 
     private splitLargeContent(file: TFile, content: string, maxTokens: number): Array<{ content: string; size: number }> {

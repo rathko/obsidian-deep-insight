@@ -1,8 +1,10 @@
 import { App, Notice, Setting, PluginSettingTab, TFile, SuggestModal, DropdownComponent } from 'obsidian';
 import { DEFAULT_PROMPTS } from './defaultPrompts';
 import { AIProvider, AIModel, DeepInsightAISettings } from './types';
-import { AI_MODELS, API_CONSTANTS } from './constants';
+import { AI_MODELS, API_CONSTANTS, PATTERN_DEFAULTS } from './constants';
 import type DeepInsightAI from './main';
+import { PatternManager } from './services/patterns/patternManager';
+import { PatternSettings } from './services/patterns/patternSettings';
 
 export class PromptNotesModal extends SuggestModal<TFile> {
     constructor(
@@ -89,6 +91,7 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         containerEl.empty();
     
         this.displayBasicSettings(containerEl);
+        this.addPatternSettings(containerEl);
         this.displayPromptSettings(containerEl);
         this.displayAdvancedSettingsHeader(containerEl);
         
@@ -564,4 +567,10 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
                     }
                 }));
     }
+
+    private addPatternSettings(containerEl: HTMLElement): void {
+        const patternSettings = new PatternSettings(containerEl, this.plugin);
+        patternSettings.render();
+    }
 }
+
