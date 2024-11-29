@@ -1,7 +1,7 @@
 {
     "name": "deep-insight-ai",
     "version": "1.0.4",
-    "description": "Unlock actionable tasks and insights from your Obsidian notes with the power of AI.",
+    "description": "AI-Powered Insights and Actions from Your Obsidian Notes. Transform Your Notes to TODOs with Claude or GPT LLMs.",
     "main": "main.js",
     "scripts": {
         "dev": "node esbuild.config.mjs",

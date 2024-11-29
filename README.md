@@ -2,7 +2,7 @@
 
 ### Turn Your Obsidian Vault Into Action With AI-Powered Insights
 
-**Deep Insight** transforms [Obsidian](https://obsidian.md/) notes into a powerhouse of actionable TODO tasks and ideas, using the power of AI to uncover what truly matters to you.
+**Deep Insight** transforms [Obsidian](https://obsidian.md/) notes into a powerhouse of actionable TODO tasks and ideas, using AI to uncover what truly matters to you.
 
 
 Here's an example:
@@ -58,7 +58,7 @@ Note: Alternatively, see [docs](./docs) on how to install latest version manuall
    - Choose either Claude Sonnet, Haiku or GPT 4o/mini model
    - Exclude certain folders (if needed in a larger vaults)
    - Customize prompts
-      - **User prompt is where you define your mission, goals and beliefs** and any additional instructions. You are encouraged to change this prompt. 
+      - **User prompt is where you define your mission, goals and movitation** and any additional instructions. You are encouraged to change this prompt. 
       - System prompt defines how Deep Insight will process the files
    - Enable cost tracking for AI estimates (enabled by default)
 5. Access advanced settings:
@@ -132,7 +132,7 @@ A: Update the User Prompt in settings or link it to a custom note that reflects 
 A: The plugin only processes Markdown (.md) files. Other file types (images, PDFs, etc.) are ignored to keep the analysis focused and efficient.
 
 ### Q: How expensive is it to run?
-A: It’s affordable with control in your hands. For my own vault with thousands of notes from the last few years - with GPT-4o mini, it’s around $0.15 per run — roughly $5/month for daily reviews. Larger vault? You might want to exclude folders in settings for big savings. Prefer a more advanced and pricier model? Costs can rise. The plugin estimates costs upfront—if it’s too high, close Obsidian while the plugin is running (this will stop processing), reopen and tweak exclusions in settings, and try again.
+A: It’s affordable with control in your hands. For my own vault with thousands of notes from the last few years - using GPT-4o mini, it’s around $0.15 per run — roughly $5/month for daily reviews. Larger vault? You might want to exclude folders in settings for big savings. Prefer a more advanced and pricier model? Costs can rise. The plugin estimates costs upfront—if it’s too high, close Obsidian while the plugin is running (this will stop processing), reopen and tweak exclusions in settings, and try again.
 
 ### Q: How does chunking work?
 A: Chunking (batching) helps by processing notes in smaller sections to:
@@ -140,18 +140,18 @@ A: Chunking (batching) helps by processing notes in smaller sections to:
 2. Stay within API context token limits
 3. Maintain context across related notes
 
-It might take a while to process a very large vault. For best results think carefully whether there are more folders you can exclude from processing. Using more affordable model (GPT4o mini or Haiku can also help reduce costs). 
+It might take a few minutes to process a larger vault. For best results think carefully whether there are more folders you can exclude from processing. Using more affordable model (GPT-4o mini or Haiku can help reduce costs). 
 
 ### Q: Can I integrate other AI models?
-A: The plugin currently supports Claude 3.5 and OpenAI GPT4o models. Pull requests are gladly accepted!
+A: The plugin currently supports Claude 3.5 and OpenAI GPT-4o models. Pull requests are gladly accepted!
 
 ### Q: Should I use OpenAI or Anthropic?
 A: While both AI providers work quite well, OpenAI tends to have more strict API quotas, especially with the GPT-4o model. If you see frequent errors related to hitting OpenAI quota limits, you might try GPT-4o mini or Anthropic.
 
 ### Q: How is my data handled?
-A: Your notes are only transferred between your Obsidian vault and Anthropic (Claude AI) / OpenAI. No data is stored or transmitted elsewhere, ensuring complete privacy.
+A: Your notes are transferred only between your Obsidian vault and Anthropic's Claude / OpenAI. No data is stored or transmitted elsewhere, ensuring complete privacy.
 
-Both OpenAI and Anthroic do not use data submitted via API for training, unless user specifically opted in.
+Both OpenAI and Anthropic do not use data submitted via API for training, unless user specifically opted in.
 
 ## Credits
 

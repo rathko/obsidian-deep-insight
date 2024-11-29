@@ -3,7 +3,7 @@
     "name": "Deep Insight",
     "version": "1.0.4",
     "minAppVersion": "1.6.7",
-    "description": "Unlock actionable tasks and insights from your Obsidian notes using LLMs AI: Anthropic's Claude or OpenAI's GPT models.",
+    "description": "AI-Powered Insights and Actions from Your Obsidian Notes. Transform Your Notes to TODOs with Claude or GPT LLMs.",
     "author": "Radek Maciaszek",
     "isDesktopOnly": false,
     "css": ["styles.css"]
