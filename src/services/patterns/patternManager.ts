@@ -26,7 +26,8 @@ export class PatternManager {
     
         const abstractFile = this.vault.getAbstractFileByPath(this.config.patternsPath);
         if (!abstractFile || !(abstractFile instanceof TFolder)) {
-            throw new Error('Patterns folder not found or is not a folder');
+            console.warn(`Patterns folder not found at path: ${this.config.patternsPath}`);
+            return;
         }
     
         this.patterns.clear();
@@ -35,43 +36,53 @@ export class PatternManager {
 
     private async scanPatterns(folder: TFolder): Promise<void> {
         for (const child of folder.children) {
-            if (child instanceof TFolder) {
-                const pattern = await this.processPatternFolder(child);
-                if (pattern) {
-                    this.patterns.set(pattern.id, pattern);
+            try {
+                if (child instanceof TFolder) {
+                    const pattern = await this.processPatternFolder(child);
+                    if (pattern) {
+                        this.patterns.set(pattern.id, pattern);
+                    }
+                    // Also scan subfolders
+                    await this.scanPatterns(child);
+                } else if (child instanceof TFile && 
+                          child.extension === 'md' && 
+                          child.name.toLowerCase() !== 'system.md' && 
+                          child.name.toLowerCase() !== 'user.md' &&
+                          child.name.toLowerCase() !== 'readme.md') {
+                    const pattern = await this.processPatternFile(child);
+                    if (pattern) {
+                        this.patterns.set(pattern.id, pattern);
+                    }
                 }
-            } else if (child instanceof TFile && child.extension === 'md') {
-                const pattern = await this.processPatternFile(child);
-                if (pattern) {
-                    this.patterns.set(pattern.id, pattern);
-                }
+            } catch (error) {
+                console.error(`Error loading pattern from ${child.path}:`, error);
             }
         }
     }
 
     private async processPatternFolder(folder: TFolder): Promise<Pattern | null> {
         const children = folder.children;
-        const systemFile = children.find(f => f instanceof TFile && f.name === 'system.md') as TFile;
-        const userFile = children.find(f => f instanceof TFile && f.name === 'user.md') as TFile;
-
+        const systemFile = children.find(f => f instanceof TFile && f.name === 'system.md') as TFile | undefined;
+        const userFile = children.find(f => f instanceof TFile && f.name === 'user.md') as TFile | undefined;
+    
         if (!systemFile && !userFile) {
             return null;
         }
-
+    
         const pattern: Pattern = {
             id: folder.path,
             name: folder.name,
             path: folder.path,
             type: 'folder'
         };
-
+    
         if (systemFile) {
             pattern.system = await this.vault.cachedRead(systemFile);
         }
         if (userFile) {
             pattern.user = await this.vault.cachedRead(userFile);
         }
-
+    
         return pattern;
     }
 

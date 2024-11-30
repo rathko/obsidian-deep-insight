@@ -1,7 +1,7 @@
-import { App, Setting, Notice } from 'obsidian';
-import DeepInsightAI from 'src/main';
-import { PatternManager } from './patternManager';
-import { PATTERN_DEFAULTS } from 'src/constants';
+import { PATTERN_DEFAULTS } from "src/constants";
+import { PatternManager } from "./patternManager";
+import { Notice, Setting } from "obsidian";
+import DeepInsightAI from "src/main";
 
 export class PatternSettings {
     private mainToggle!: Setting;
@@ -28,9 +28,19 @@ export class PatternSettings {
                 this.plugin.settings.patterns.folderPath
             );
 
+            // Load patterns immediately after installation
+            await patternManager.loadPatterns();
+
             this.plugin.settings.patterns.installed = true;
             await this.plugin.saveSettings();
-            new Notice('Fabric patterns installed successfully!');
+            
+            // Verify patterns were loaded successfully
+            const patterns = patternManager.getAllPatterns();
+            if (patterns.length === 0) {
+                throw new Error('No patterns were loaded after installation');
+            }
+            
+            new Notice(`Fabric patterns installed successfully! (${patterns.length} patterns available)`);
         } catch (err) {
             const error = err as Error;
             new Notice(`Failed to install patterns: ${error.message}`);
@@ -53,6 +63,18 @@ export class PatternSettings {
                     this.plugin.settings.patterns.enabled = value;
                     await this.plugin.saveSettings();
                     this.plugin.updateContextMenu();
+                    
+                    if (value) {
+                        // Load patterns when enabling the feature
+                        const patternManager = PatternManager.getInstance(
+                            this.plugin.app.vault,
+                            {
+                                enabled: true,
+                                patternsPath: this.plugin.settings.patterns.folderPath
+                            }
+                        );
+                        await patternManager.loadPatterns();
+                    }
                     
                     // Clear and update container
                     this.patternContainer.empty();
@@ -81,11 +103,23 @@ export class PatternSettings {
                     await this.plugin.saveSettings();
                 }));
 
+        const patternManager = PatternManager.getInstance(
+            this.plugin.app.vault,
+            {
+                enabled: this.plugin.settings.patterns.enabled,
+                patternsPath: this.plugin.settings.patterns.folderPath
+            }
+        );
+
+        const buttonText = this.plugin.settings.patterns.installed ? 
+            `Update Patterns (${patternManager.getAllPatterns().length} installed)` : 
+            'Install Patterns';
+
         new Setting(this.patternContainer)
             .setName('Install Fabric Patterns')
             .setDesc('Install or update bundled Fabric patterns')
             .addButton(button => button
-                .setButtonText(this.plugin.settings.patterns.installed ? 'Update Patterns' : 'Install Patterns')
+                .setButtonText(buttonText)
                 .onClick(() => this.handleInstallPatterns()));
     }
 }

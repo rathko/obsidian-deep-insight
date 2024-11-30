@@ -25,6 +25,7 @@ export default class DeepInsightAI extends Plugin {
     private isProcessing = false;
     private patternManager!: PatternManager;
     private contextMenuManager!: ContextMenuManager;
+    private lastActiveEditor: Editor | null = null;
 
     async onload(): Promise<void> {
         this.contextMenuManager = new ContextMenuManager(this);
@@ -46,6 +47,21 @@ export default class DeepInsightAI extends Plugin {
         });
     
         this.addSettingTab(new DeepInsightAISettingTab(this.app, this));
+
+        this.registerEvent(
+            this.app.workspace.on('active-leaf-change', () => {
+                const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (view?.editor) {
+                    this.lastActiveEditor = view.editor;
+                }
+            })
+        );
+
+        this.registerEvent(
+            this.app.workspace.on('editor-change', (editor) => {
+                this.lastActiveEditor = editor;
+            })
+        );
     }
     
     async saveSettings(): Promise<void> {
@@ -66,6 +82,7 @@ export default class DeepInsightAI extends Plugin {
         if (this.contextMenuManager) {
             this.contextMenuManager.unregister();
         }
+        this.lastActiveEditor = null;
     }    
 
     private initializeProvider(): void {
@@ -255,6 +272,12 @@ export default class DeepInsightAI extends Plugin {
     }    
     
     private async showPatternSelection(file: TAbstractFile): Promise<void> {
+        // Store the current active editor before showing pattern selection
+        const currentView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (currentView?.editor) {
+            this.lastActiveEditor = currentView.editor;
+        }
+
         await this.patternManager.loadPatterns();
         const patterns = this.patternManager.getAllPatterns();
         
@@ -273,9 +296,10 @@ export default class DeepInsightAI extends Plugin {
     }
 
     private async runPattern(pattern: Pattern, file: TAbstractFile): Promise<void> {
-        const editor = this.getActiveEditor();
+        // Try to use the last active editor first, then fall back to getting current active editor
+        const editor = this.lastActiveEditor || this.getActiveEditor();
         if (!editor) {
-            new Notice('No active editor found');
+            new Notice('No editor found. Please make sure you have a note open and a cursor position selected.');
             return;
         }
 
@@ -365,6 +389,9 @@ export default class DeepInsightAI extends Plugin {
     }
 
     private getActiveEditor(): Editor | null {
+        if (this.lastActiveEditor) {
+            return this.lastActiveEditor;
+        }
         const view = this.app.workspace.getActiveViewOfType(MarkdownView);
         return view?.editor || null;
     }
