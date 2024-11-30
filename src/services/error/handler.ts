@@ -8,7 +8,10 @@ export class ErrorHandler {
         AUTH_ERROR: 'Authentication failed',
         RATE_LIMIT: 'Rate limit exceeded',
         INVALID_REQUEST: 'Invalid request',
-        PROCESSING_ERROR: 'Error processing content'
+        PROCESSING_ERROR: 'Error processing content',
+        PATTERN_ERROR: 'Pattern processing failed',
+        PATTERN_NOT_FOUND: 'Pattern not found',
+        PATTERN_INSTALLATION_ERROR: 'Failed to install patterns'
     };
 
     static handle(error: unknown): void {

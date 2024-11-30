@@ -1,3 +1,5 @@
+import { TAbstractFile } from "obsidian";
+
 export interface PromptTemplate {
     systemPrompt: string;
     userPrompt: string;

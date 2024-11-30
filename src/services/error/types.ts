@@ -4,7 +4,10 @@ export type ErrorType =
     | 'AUTH_ERROR' 
     | 'RATE_LIMIT' 
     | 'INVALID_REQUEST'
-    | 'PROCESSING_ERROR';
+    | 'PROCESSING_ERROR'
+    | 'PATTERN_ERROR'
+    | 'PATTERN_NOT_FOUND'
+    | 'PATTERN_INSTALLATION_ERROR';
 
 export interface AIError {
     type: ErrorType;

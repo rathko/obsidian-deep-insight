@@ -30,4 +30,9 @@ export interface DeepInsightAISettings {
         maxTokens?: number;
     };
     showAdvancedSettings: boolean;
+    patterns: {
+        enabled: boolean;
+        folderPath: string;
+        installed: boolean;
+    };
 }

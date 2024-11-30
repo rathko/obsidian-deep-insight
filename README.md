@@ -10,12 +10,13 @@
 
 <p class="align center">
 <h4><code>Deep Insight</code> turns your Obsidian vault into action with AI-powered insights.</h4>
-<h4>Transform <a href="https://obsidian.md/">Obsidian</a> notes into a powerhouse of actionable TODO tasks and ideas, use AI to uncover what truly matters to you.</h4>
+<h4>Transform <a href="https://obsidian.md/">Obsidian</a> notes into a powerhouse of actionable tasks and insights. Use AI with <a href="https://github.com/danielmiessler/fabric">Fabric</a> patterns, to uncover what truly matters to you.</h4>
 </p>
 
 [Key Features](#key-features) •
 [Configuration](#configuration) •
 [How to Use](#how-to-use) •
+[Pattern-Based Analysis](#pattern-based-analysis) •
 [Customization](#customization) •
 [FAQ](#faq)
 
@@ -31,6 +32,7 @@
   - [Installation](#installation)
   - [Configuration](#configuration)
   - [How to Use](#how-to-use)
+  - [Pattern-Based Analysis](#pattern-based-analysis)
   - [Customization](#customization)
     - [Custom Prompts](#custom-prompts)
     - [AI Models](#ai-models)
@@ -45,14 +47,16 @@
 - 🎯 Prioritizes tasks based on note context and your own **core values, goals and beliefs**. 
 - ⚡ Processes large vaults in manageable chunks / batches
 - 💰 Provides cost estimates for AI usage
-- 🧠 Inspired by [Fabric](https://github.com/danielmiessler/fabric), an open-source framework for human-AI augmentation
+- 🎯 Pattern-based analysis using [Fabric](https://github.com/danielmiessler/fabric) patterns
+- 🔄 Context menu integration for quick pattern execution
+
+*Note: Only markdown files (.md) are analyzed; other file types like PDFs, images, etc., are excluded.*
 
 ## Your Vault Is a Goldmine — But Are You Missing What Matters?
 
 Inside your vault lies:
 
 - Tasks and commitments buried in daily notes
-- Scattered project deadlines hiding in folders
 - Brilliant ideas waiting to be rediscovered
 - Patterns and themes you haven’t spotted
 - Follow-ups silently slipping through the cracks
@@ -62,8 +66,7 @@ Deep Insight eliminates the chaos and brings clarity:
 - Extracts actionable tasks tailored to your goals
 - Finds recurring themes and big-picture insights
 - Surfaces forgotten deadlines and overlooked priorities
-- Preserves your folder structure while uncovering value
-- Delivers insights, your way
+- Delivers insights, using [Fabric](https://github.com/danielmiessler/fabric) patterns.
 
 Let Deep Insight be your personal assistant, surfacing the most important insights—aligned with your **goals, values, and beliefs** — so you never lose sight of what truly matters.
 
@@ -86,7 +89,8 @@ Note: Alternatively, see [docs](./docs) on how to install latest version manuall
    - Exclude certain folders (if needed in a larger vaults)
    - Customize prompts
       - **User prompt is where you define your mission, goals and movitation** and any additional instructions. You are encouraged to change this prompt. 
-      - System prompt defines how Deep Insight will process the files
+      - System prompt defines how Deep Insight will process the files to extract actions
+   - Install Patterns, to take advantage of [Fabric](https://github.com/danielmiessler/fabric) within your Obsidian
    - Enable cost tracking for AI estimates (enabled by default)
 5. Access advanced settings:
    - Test mode to reduce costs during experimentation with prompts
@@ -101,16 +105,43 @@ Note: Alternatively, see [docs](./docs) on how to install latest version manuall
 4. Search for "Deep Insight: Generate Insights from Notes"
 5. The plugin will generate tasks/insights and insert them in your chosen location
 
-*Note: Only markdown files (.md) are analyzed; other file types like PDFs, images, etc., are excluded.*
+## Pattern-Based Analysis
 
-## Customization
+### Using Patterns
+
+1. Install patterns from settings
+2. Right-click any file/folder in explorer or editor
+3. Select "Deep Insight: Run Pattern"
+4. Choose a pattern to analyze your content
+
+### Pattern Structure
+
+Patterns are stored in Patterns folder (configurable):
+
+```
+patterns/
+├── pattern-name/
+│   ├── system.md    # System instructions
+│   └── user.md      # Optional user context
+└── single-file-pattern.md
+```
+All patterns are crowdsourced set of AI prompts adapted from [Fabric patterns](https://github.com/danielmiessler/fabric/tree/main/patterns).
+
+### Custom Patterns
+
+Create custom patterns by:
+
+1. Creating a new folder in patterns directory
+2. Adding system.md with AI instructions
+3. Optional: Add user.md for specific context
+4. Or add single .md files for simpler patterns
 
 ### Custom Prompts
 
-Tailor the behavior of the AI by adjusting the types of prompts used in your workflow:
+In addition to using Fabric patterns, we have two global patterns allowing for convenient TODO actions generation without having to select individual patterns:
 
-- **System Prompt:** Defines how the AI approaches analysis—like instructions for a personal assistant. Customize to set task formats, note categorizations, priorities, and style.
-- **User Prompt:** Here is where you define **your mission, purpose, goals and beliefs** and any additional instructions
+- **User Prompt:** Here is where you define **your mission, purpose, goals and beliefs** and any additional instructions. These goals will be provided as a prompt to every call into AI, so whatever action you take the AI will always be aware of your goals.
+- **System Prompt:** Defines how the AI approaches analysis—like instructions for a personal assistant. Customize to set task formats, note categorizations, priorities, style and a template for generated action items.
 
 ### How to Set Custom Prompts
 
@@ -181,6 +212,8 @@ Both OpenAI and Anthropic do not use data submitted via API for training, unless
 [MIT](LICENSE)
 
 ## Credits
+
+This project and it's mission was inspired by [Fabric](https://github.com/danielmiessler/fabric), an open-source framework for human-AI augmentation.
 
 `Deep Insight` was created by <a href="https://www.linkedin.com/in/radekmaciaszek/" target="_blank">Radek Maciaszek</a> in November of 2024.
 

@@ -30,7 +30,7 @@ export const DEFAULT_PROMPTS = {
      * Not Important + Not Urgent: Eliminate
    - Consider task dependencies and relationships
    - Highlight time-sensitive items
-   - Consider notes created recently (see <created>YYYY-MM-DD</created> tag) as more relevant
+   - Consider notes created and modified recently (see <created>YYYY-MM-DD</created> and similar <modified> XML tag) as more relevant
    - Prioritize tasks that directly support the user's core values and goals
 
 4. Additional Considerations:

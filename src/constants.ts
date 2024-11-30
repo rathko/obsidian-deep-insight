@@ -2,6 +2,12 @@ import { DEFAULT_PROMPTS } from './defaultPrompts';
 import { DeepInsightAISettings } from './types';
 import { ModelConfig } from './services/ai/types';
 
+export const PATTERN_DEFAULTS = {
+    DEFAULT_PATTERNS_FOLDER: 'Deep Insight Fabric Patterns',
+    SYSTEM_PROMPT_FILE: 'system.md',
+    USER_PROMPT_FILE: 'user.md',
+} as const;
+
 export const DEFAULT_SETTINGS: DeepInsightAISettings = {
     provider: {
         type: 'openai',
@@ -22,6 +28,11 @@ export const DEFAULT_SETTINGS: DeepInsightAISettings = {
         maxTokens: 1000
     },
     showAdvancedSettings: false,
+    patterns: {
+        enabled: false,
+        folderPath: PATTERN_DEFAULTS.DEFAULT_PATTERNS_FOLDER,
+        installed: false
+    }
 };
 
 export const AI_MODELS = {

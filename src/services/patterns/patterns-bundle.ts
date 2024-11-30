@@ -1,0 +1,1 @@
+export const BUNDLED_PATTERNS: Record<string, { system?: string; user?: string }> = {};
