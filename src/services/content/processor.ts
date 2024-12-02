@@ -3,8 +3,6 @@ import { DeepInsightAISettings } from '../../types';
 import { TestModeManager } from '../test/testManager';
 import { TOKEN_LIMITS, MODEL_CONFIGS } from '../../constants';
 
-// src/services/content/processor.ts
-
 export class ContentProcessor {
     constructor(
         private vault: Vault,

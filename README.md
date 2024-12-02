@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 <p class="align center">
-<h4><code>Deep Insight</code> turns your Obsidian vault into action with AI-powered insights.</h4>
+<h4><code>Deep Insight</code> turns your Obsidian vault into actions and insights with AI-powered patterns.</h4>
 <h4>Transform <a href="https://obsidian.md/">Obsidian</a> notes into a powerhouse of actionable tasks and insights. Use AI with <a href="https://github.com/danielmiessler/fabric">Fabric</a> patterns, to uncover what truly matters to you.</h4>
 </p>
 
@@ -42,13 +42,13 @@
 ## Key Features
 
 - 🤖 Powered by Claude 3.5 and OpenAI GPT-4o AI models (Sonnet, Haiku, GPT-4o and GPT-4o mini)
-- 📝 Analyzes every Markdown file in your vault
-- ✅ Extracts tasks and actionable insights using customisable prompts
+- 📝 Analyzes every Markdown file in your vault (you can exclude chosen folders)
 - 🎯 Prioritizes tasks based on note context and your own **core values, goals and beliefs**. 
-- ⚡ Processes large vaults in manageable chunks / batches
-- 💰 Provides cost estimates for AI usage
 - 🎯 Pattern-based analysis using [Fabric](https://github.com/danielmiessler/fabric) patterns
 - 🔄 Context menu integration for quick pattern execution
+- ✅ Extracts tasks and actionable insights using customisable prompts
+- ⚡ Processes large vaults in manageable chunks / batches
+- 💰 Provides cost estimates for AI usage
 
 *Note: Only markdown files (.md) are analyzed; other file types like PDFs, images, etc., are excluded.*
 
@@ -76,6 +76,8 @@ Let Deep Insight be your personal assistant, surfacing the most important insigh
 2. Navigate to "Community Plugins" and enable it
 3. Click "Browse" and search for "Deep Insight"
 4. Click "Install" and enable the plugin
+5. Enable Patterns in order to use [Fabric](https://github.com/danielmiessler/fabric) patterns
+6. Install Patterns, they will be available in a "Deep Insight Fabric Patterns" folder
 
 Note: Alternatively, see [docs](./docs) on how to install latest version manually.
 
@@ -110,9 +112,10 @@ Note: Alternatively, see [docs](./docs) on how to install latest version manuall
 ### Using Patterns
 
 1. Install patterns from settings
-2. Right-click any file/folder in explorer or editor
+2. Right-click any file/folder in explorer or current editor
 3. Select "Deep Insight: Run Pattern"
 4. Choose a pattern to analyze your content
+5. The results will appear in your currently selected note
 
 ### Pattern Structure
 
@@ -125,20 +128,20 @@ patterns/
 │   └── user.md      # Optional user context
 └── single-file-pattern.md
 ```
-All patterns are crowdsourced set of AI prompts adapted from [Fabric patterns](https://github.com/danielmiessler/fabric/tree/main/patterns).
+All patterns are crowdsourced AI prompts adapted from [Fabric patterns](https://github.com/danielmiessler/fabric/tree/main/patterns). Due to Obsidian plugin size limitations, only selected patterns were included in this plugin. Feel free to add manually any other Fabric patterns by simply copy/pasting them into "Deep Insight Fabric Patterns" folder.
 
 ### Custom Patterns
 
 Create custom patterns by:
 
-1. Creating a new folder in patterns directory
-2. Adding system.md with AI instructions
+1. Creating a new folder in "Deep Insight Fabric Patterns" directory
+2. Adding "system" note with AI instructions (Obsidan will name it system.md automatically)
 3. Optional: Add user.md for specific context
-4. Or add single .md files for simpler patterns
+4. Or add single .md files for simpler patterns directly to the parent "Deep Insight Fabric Patterns" folder
 
 ### Custom Prompts
 
-In addition to using Fabric patterns, we have two global patterns allowing for convenient TODO actions generation without having to select individual patterns:
+In addition to using Fabric patterns, we have two global patterns/prompts allowing for convenient TODO actions generation without having to select individual patterns:
 
 - **User Prompt:** Here is where you define **your mission, purpose, goals and beliefs** and any additional instructions. These goals will be provided as a prompt to every call into AI, so whatever action you take the AI will always be aware of your goals.
 - **System Prompt:** Defines how the AI approaches analysis—like instructions for a personal assistant. Customize to set task formats, note categorizations, priorities, style and a template for generated action items.
@@ -147,7 +150,7 @@ In addition to using Fabric patterns, we have two global patterns allowing for c
 
 1. Create notes in your vault for each type of prompt
 2. Link them in the plugin settings using "Select Note"
-3. Once the prompt note was selected, you can edit it directly in Obsidian as needed
+3. Once the prompt note was selected, you can edit it directly as Obsidian note as needed
 
 ### AI Models
 

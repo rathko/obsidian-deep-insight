@@ -91,11 +91,20 @@ export class PatternManager {
             return null;
         }
 
+        if (file.parent) {
+            const siblings = file.parent.children;
+            if (siblings.some(f => f.name === 'system.md' || f.name === 'user.md')) {
+                return null;
+            }
+        }
+
+        // Treat single file patterns as folders with just a system prompt
+        const name = file.basename;
         return {
             id: file.path,
-            name: `${file.parent?.name}/${file.basename}`,
+            name: name,
             path: file.path,
-            type: 'file',
+            type: 'folder',  // Treat all patterns as folder type for consistent display
             system: await this.vault.cachedRead(file)
         };
     }

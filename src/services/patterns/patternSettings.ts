@@ -55,8 +55,8 @@ export class PatternSettings {
         this.patternContainer = this.containerEl.createDiv({ cls: 'pattern-settings-container' });
 
         this.mainToggle = new Setting(this.containerEl)
-            .setName('Enable Patterns')
-            .setDesc('Enable pattern-based analysis')
+            .setName('Enable Fabric Patterns')
+            .setDesc('Enable Fabric pattern-based analysis')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.patterns.enabled)
                 .onChange(async (value) => {
@@ -94,7 +94,7 @@ export class PatternSettings {
     private renderPatternOptions(): void {
         new Setting(this.patternContainer)
             .setName('Patterns Folder')
-            .setDesc('Location of analysis patterns')
+            .setDesc('Location of Fabric patterns')
             .addText(text => text
                 .setPlaceholder(PATTERN_DEFAULTS.DEFAULT_PATTERNS_FOLDER)
                 .setValue(this.plugin.settings.patterns.folderPath)

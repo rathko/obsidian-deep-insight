@@ -7,7 +7,6 @@ export class ContextMenuManager {
     constructor(private plugin: Plugin) {}
 
     register(callback: (file: TAbstractFile) => void): void {
-        // Unregister any existing events first
         this.unregister();
 
         // Create file explorer menu handler
@@ -37,7 +36,6 @@ export class ContextMenuManager {
             });
         };
 
-        // Register the events
         if (this.fileMenuEvent) {
             this.plugin.registerEvent(
                 this.plugin.app.workspace.on('file-menu', this.fileMenuEvent)

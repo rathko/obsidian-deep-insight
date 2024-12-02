@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: DeepInsightAISettings = {
     defaultUserPrompt: DEFAULT_PROMPTS.user,
     retryAttempts: 1,
     showCostSummary: true,
+    includeUserContext: true,
     testMode: {
         enabled: false,
         maxFiles: 5,

@@ -109,6 +109,9 @@ export default class DeepInsightAI extends Plugin {
         this.isProcessing = true;
 
         try {
+            if (this.costTracker) {
+                this.costTracker.reset();
+            }
             await this.processNotes(editor);
         } catch (error) {
             ErrorHandler.handle(error);
@@ -170,15 +173,17 @@ export default class DeepInsightAI extends Plugin {
             PromptManager.loadPromptTemplate(
                 this.app.vault,
                 this.settings.systemPromptPath,
-                this.settings.defaultSystemPrompt
+                this.settings.defaultSystemPrompt,
+                true
             ),
             PromptManager.loadPromptTemplate(
                 this.app.vault,
                 this.settings.userPromptPath,
-                this.settings.defaultUserPrompt
+                this.settings.defaultUserPrompt,
+                this.settings.includeUserContext
             )
         ]);
-
+    
         return { systemPrompt, userPrompt };
     }
 
@@ -296,7 +301,6 @@ export default class DeepInsightAI extends Plugin {
     }
 
     private async runPattern(pattern: Pattern, file: TAbstractFile): Promise<void> {
-        // Try to use the last active editor first, then fall back to getting current active editor
         const editor = this.lastActiveEditor || this.getActiveEditor();
         if (!editor) {
             new Notice('No editor found. Please make sure you have a note open and a cursor position selected.');
@@ -304,6 +308,9 @@ export default class DeepInsightAI extends Plugin {
         }
 
         try {
+            if (this.costTracker) {
+                this.costTracker.reset();
+            }
             const systemPrompt = pattern.system || this.settings.defaultSystemPrompt;
             const userPrompt = this.settings.defaultUserPrompt;
             
@@ -340,19 +347,24 @@ export default class DeepInsightAI extends Plugin {
                 message: 'AI provider not initialized'
             });
         }
-
+    
         const promptContent = isCombining ? content : `Notes Content:\n${content}`;
         const messages: AIMessage[] = [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `${userPrompt}\n\n${promptContent}` }
+            { role: 'system' as const, content: systemPrompt },
+            { 
+                role: 'user' as const, 
+                content: this.settings.includeUserContext 
+                    ? `${userPrompt}\n\n${promptContent}`
+                    : promptContent
+            }
         ];
-
+    
         const response = await this.provider.generateResponse(messages);
         
         if (this.costTracker && response.usage) {
             this.costTracker.addUsage(response.usage);
         }
-
+    
         return response.content;
     }
 

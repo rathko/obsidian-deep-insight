@@ -56,4 +56,9 @@ export class CostTracker {
             `• Total estimated cost: $${total.toFixed(CostTracker.COST_PRECISION)}`
         ].join('\n');
     }
+
+    reset(): void {
+        this.inputTokens = 0;
+        this.outputTokens = 0;
+    }
 }

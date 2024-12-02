@@ -24,6 +24,7 @@ export interface DeepInsightAISettings {
     defaultUserPrompt: string;
     retryAttempts: number;
     showCostSummary: boolean;
+    includeUserContext: boolean;
     testMode: {
         enabled: boolean;
         maxFiles?: number;

@@ -239,10 +239,20 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
     private async displayPromptSettings(containerEl: HTMLElement): Promise<void> {
         containerEl.createEl('h3', { text: 'Prompts Configuration' });
 
+        new Setting(containerEl)
+        .setName('Include Personal Context')
+        .setDesc('Include your mission, goals, and beliefs in every AI interaction')
+        .addToggle(toggle => toggle
+            .setValue(this.plugin.settings.includeUserContext)
+            .onChange(async (value) => {
+                this.plugin.settings.includeUserContext = value;
+                await this.plugin.saveSettings();
+            }));
+
         await Promise.all([
             this.createPromptSection(
                 containerEl,
-                'User Prompt',
+                'User Prompt: Personal Context',
                 'Defines your mission, goals and beliefs',
                 'userPromptPath',
                 'defaultUserPrompt'
@@ -250,7 +260,7 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
             this.createPromptSection(
                 containerEl,
                 'System Prompt',
-                'Defines how the AI should process the Vault notes',
+                'Defines how the AI should process the Vault notes in order to exctract actionable items',
                 'systemPromptPath',
                 'defaultSystemPrompt'
             )
