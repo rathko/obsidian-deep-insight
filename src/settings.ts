@@ -260,7 +260,7 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
             this.createPromptSection(
                 containerEl,
                 'System Prompt',
-                'Defines how the AI should process the Vault notes in order to exctract actionable items',
+                'Defines how the AI should process the Vault in order to generate insights and tasks from notes',
                 'systemPromptPath',
                 'defaultSystemPrompt'
             )

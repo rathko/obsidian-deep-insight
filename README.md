@@ -111,11 +111,14 @@ Note: Alternatively, see [docs](./docs) on how to install latest version manuall
 
 ### Using Patterns
 
-1. Install patterns from settings
+1. Install patterns from settings to see sample Fabric patterns
+2. Download [Fabric](https://github.com/danielmiessler/fabric) (Code -> Download ZIP)
+   - Extract the ZIP file
+   - Copy the `patterns` folder to your "Deep Insight Fabric Patterns" Obsidian folder
 2. Right-click any file/folder in explorer or current editor
 3. Select "Deep Insight: Run Pattern"
 4. Choose a pattern to analyze your content
-5. The results will appear in your currently selected note
+5. Results will appear at your cursor location, or at the end of the document if no cursor is placed
 
 ### Pattern Structure
 

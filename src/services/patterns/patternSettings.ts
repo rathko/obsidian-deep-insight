@@ -102,7 +102,7 @@ export class PatternSettings {
                     this.plugin.settings.patterns.folderPath = value;
                     await this.plugin.saveSettings();
                 }));
-
+    
         const patternManager = PatternManager.getInstance(
             this.plugin.app.vault,
             {
@@ -110,14 +110,24 @@ export class PatternSettings {
                 patternsPath: this.plugin.settings.patterns.folderPath
             }
         );
-
+    
         const buttonText = this.plugin.settings.patterns.installed ? 
-            `Update Patterns (${patternManager.getAllPatterns().length} installed)` : 
+            `Update Patterns` : 
             'Install Patterns';
-
+    
+        const descFragment = document.createDocumentFragment();
+        descFragment.append(
+            'Install or update bundled Fabric patterns. ',
+            createEl('a', { 
+                text: 'Fabric patterns installation guide',
+                href: 'https://github.com/rathko/obsidian-deep-insight?tab=readme-ov-file#pattern-structure',
+                cls: 'external-link'
+            })
+        );
+    
         new Setting(this.patternContainer)
             .setName('Install Fabric Patterns')
-            .setDesc('Install or update bundled Fabric patterns')
+            .setDesc(descFragment)
             .addButton(button => button
                 .setButtonText(buttonText)
                 .onClick(() => this.handleInstallPatterns()));

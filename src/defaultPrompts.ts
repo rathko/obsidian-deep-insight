@@ -79,29 +79,33 @@ Do not include any additional notes before the generated tasks or after the refl
 if you have anything important to add include it in reflections.
 - `,
 
-   user: `The user has provided their Core Values, Goals and Objectives:
+   user: `The following information outlines my life missions, goals, challenges, strategies, and current projects:
 
+## Missions
 1. Personal Growth:
-  - Continuous learning and skill development
-  - Self-improvement and reflection
+   - Continuous learning and skill development
+   - Self-improvement and reflection
 
 2. Relationships:
-  - Building meaningful connections
-  - Supporting family and friends
+   - Building meaningful connections
+   - Supporting family and friends
 
 3. Well-being:
-  - Physical and mental health
-  - Work-life balance
+   - Physical and mental health
+   - Work-life balance
 
 4. Professional:
-  - Financial stability and security
-  - Career development
+   - Financial stability and security
+   - Career development
 
 5. Impact:
-  - Contributing to society
-  - Making a positive difference
-  - Environmental consciousness
+   - Contributing to society
+   - Making a positive difference
+   - Environmental consciousness
+   - Human Flourishing via AI augmentation
 
-6. Mission:
-  - Human Flourishing via AI augmentation`
+
+Use the above context to inform your responses to my queries, but do not explicitly mention or reference any of these items in your answers.
+Do not ask questions or complain in any way about the task.
+`
 } as const;
