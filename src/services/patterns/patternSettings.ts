@@ -117,9 +117,9 @@ export class PatternSettings {
     
         const descFragment = document.createDocumentFragment();
         descFragment.append(
-            'Install or update bundled Fabric patterns. ',
+            'Install or update bundled Fabric patterns. To install all Fabric patterns, see: ',
             createEl('a', { 
-                text: 'Fabric patterns installation guide',
+                text: 'installation guide',
                 href: 'https://github.com/rathko/obsidian-deep-insight?tab=readme-ov-file#pattern-structure',
                 cls: 'external-link'
             })
