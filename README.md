@@ -5,7 +5,7 @@
 ![Static Badge](https://img.shields.io/badge/mission-human_flourishing_via_AI_augmentation-purple)
 <br />
 ![GitHub top language](https://img.shields.io/github/languages/top/rathko/obsidian-deep-insight)
-![GitHub last commit](https://img.shields.io/github/last-commit/rathko/obsidian-deep-insight)
+![GitHub last commit](https://img.shields.io/github/last-commit/rathko/obsidian-deep-insight) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 <p class="align center">
@@ -14,7 +14,7 @@
 </p>
 
 [Key Features](#key-features) •
-[Configuration](#configuration) •
+[Configuration](#configuration) •  
 [How to Use](#how-to-use) •
 [Pattern-Based Analysis](#pattern-based-analysis) •
 [Customization](#customization) •
@@ -34,7 +34,7 @@
   - [How to Use](#how-to-use)
   - [Pattern-Based Analysis](#pattern-based-analysis)
   - [Customization](#customization)
-    - [Custom Prompts](#custom-prompts)
+    - [Custom Prompts](#custom-prompts) 
     - [AI Models](#ai-models)
   - [Contributions](#contributions)
   - [FAQ](#faq)
@@ -42,13 +42,13 @@
 ## Key Features
 
 - 🤖 Powered by Claude 3.5 and OpenAI GPT-4o AI models (Sonnet, Haiku, GPT-4o and GPT-4o mini)
-- 📝 Analyzes every Markdown file in your vault (you can exclude chosen folders)
+- 📝 Analyzes  every Markdown file in your vault (you can exclude chosen folders)
 - 🎯 Prioritizes tasks based on note context and your own **core values, goals and beliefs**. 
-- 🎯 Pattern-based analysis using [Fabric](https://github.com/danielmiessler/fabric) patterns
+- 🧬 Pattern-based analysis using [Fabric](https://github.com/danielmiessler/fabric) patterns
 - 🔄 Context menu integration for quick pattern execution
 - ✅ Extracts tasks and actionable insights using customisable prompts
 - ⚡ Processes large vaults in manageable chunks / batches
-- 💰 Provides cost estimates for AI usage
+- 💰 Provides cost estimates for AI usage  
 
 *Note: Only markdown files (.md) are analyzed; other file types like PDFs, images, etc., are excluded.*
 
@@ -57,16 +57,15 @@
 Inside your vault lies:
 
 - Tasks and commitments buried in daily notes
-- Brilliant ideas waiting to be rediscovered
-- Patterns and themes you haven’t spotted
+- Brilliant ideas waiting to be rediscovered  
+- Patterns and themes you haven't spotted
 - Follow-ups silently slipping through the cracks
 
-Deep Insight eliminates the chaos and brings clarity:
+Deep Insight eliminates the chaos and brings clarity:  
 - Analyzes every Markdown note with AI-driven prompts
 - Extracts actionable tasks tailored to your goals
 - Finds recurring themes and big-picture insights
 - Surfaces forgotten deadlines and overlooked priorities
-- Delivers insights, using [Fabric](https://github.com/danielmiessler/fabric) patterns.
 
 Let Deep Insight be your personal assistant, surfacing the most important insights—aligned with your **goals, values, and beliefs** — so you never lose sight of what truly matters.
 
@@ -74,7 +73,7 @@ Let Deep Insight be your personal assistant, surfacing the most important insigh
 
 1. Open Obsidian Settings
 2. Navigate to "Community Plugins" and enable it
-3. Click "Browse" and search for "Deep Insight"
+3. Click "Browse" and search for "Deep Insight"  
 4. Click "Install" and enable the plugin
 5. Enable Patterns in order to use [Fabric](https://github.com/danielmiessler/fabric) patterns
 6. Install Patterns, they will be available in a "Deep Insight Fabric Patterns" folder
@@ -95,7 +94,7 @@ Note: Alternatively, see [docs](./docs) on how to install latest version manuall
    - Install Patterns, to take advantage of [Fabric](https://github.com/danielmiessler/fabric) within your Obsidian
    - Enable cost tracking for AI estimates (enabled by default)
 5. Access advanced settings:
-   - Test mode to reduce costs during experimentation with prompts
+   - Test mode to reduce costs during experimentation with prompts  
    - Max tokens per request (default 100k; reduce if needed)
    - Retry attempts for processing large vaults more smoothly
 
@@ -129,9 +128,8 @@ patterns/
 ├── pattern-name/
 │   ├── system.md    # System instructions
 │   └── user.md      # Optional user context
-└── single-file-pattern.md
 ```
-All patterns are crowdsourced AI prompts adapted from [Fabric patterns](https://github.com/danielmiessler/fabric/tree/main/patterns). Due to Obsidian plugin size limitations, only selected patterns were included in this plugin. Feel free to add manually any other Fabric patterns by simply copy/pasting them into "Deep Insight Fabric Patterns" folder.
+Patterns are crowdsourced AI prompts adapted from [Fabric patterns](https://github.com/danielmiessler/fabric/tree/main/patterns). Due to Obsidian plugin size limitations, only selected patterns were included in this plugin. Feel free to add manually any other Fabric patterns by simply copy/pasting them into "Deep Insight Fabric Patterns" folder.
 
 ### Custom Patterns
 
@@ -146,13 +144,13 @@ Create custom patterns by:
 
 In addition to using Fabric patterns, we have two global patterns/prompts allowing for convenient TODO actions generation without having to select individual patterns:
 
-- **User Prompt:** Here is where you define **your mission, purpose, goals and beliefs** and any additional instructions. These goals will be provided as a prompt to every call into AI, so whatever action you take the AI will always be aware of your goals.
+- **User Prompt:** Here is where you define **your mission, purpose, goals and beliefs** and any additional instructions.
 - **System Prompt:** Defines how the AI approaches analysis—like instructions for a personal assistant. Customize to set task formats, note categorizations, priorities, style and a template for generated action items.
 
 ### How to Set Custom Prompts
 
 1. Create notes in your vault for each type of prompt
-2. Link them in the plugin settings using "Select Note"
+2. Link them in the plugin settings using "Select Note"  
 3. Once the prompt note was selected, you can edit it directly as Obsidian note as needed
 
 ### AI Models
@@ -164,35 +162,36 @@ In addition to using Fabric patterns, we have two global patterns/prompts allowi
 
 ## Contributions
 
-Contributions are welcomed! For major changes, please start by opening an issue to discuss your ideas.
+Contributions are welcomed! For major changes, please start by opening an issue to discuss your ideas.  
 For development notes see [docs](./docs)
 
 ## Support 
 
-Encounter an issue? Here’s what you can do:
+Encounter an issue? Here's what you can do:
 1. Check the [FAQ](#faq) section
 2. Submit an issue through GitHub
-3. Troubleshoot using the plugin's error handling features and check console logs
+3. Troubleshoot using the plugin's error handling features and check console logs  
 
 ## FAQ
 
 ### Q: Is the AI controlling me through my tasks?
-A: AI is just a glorified note-reader that reminds you of commitments you already wrote. No mind control here - unless you count being reminded of that project deadline you tried to forget. You're still the one calling the shots... for now.
+A: AI is just a glorified note-reader that reminds you of commitments you already wrote. You're still the one calling the shots... for now.
 
-### Q: Why aren’t tasks being generated?
+### Q: Why aren't tasks being generated?  
 A: Check if:
 1. Your API key is correctly set
-2. You have an active internet connection
-3. Folders aren’t accidentally excluded in the settings
+2. You have an active internet connection  
+3. Folders aren't accidentally excluded in the settings
 
 ### Q: How exactly AI aligns generated actions with my own goals and values?
-A: First step is to define your own mission, goals, values and long term objectives in the User Prompt. Deep Insight plugin will prioritize tasks that directly support your core values and goals. Update the User Prompt in settings or link it to a custom note that reflects your goals and priorities. You can use Test Mode to tweak prompts—this processes just a handful of files per run, making it fast and easy to fine-tune the prompts.
+A: First step is to define your own mission, goals, values and long term objectives in the User Prompt. Deep Insight plugin will prioritize tasks that directly support your core values and goals.
 
 ### Q: What file types does the plugin process?
 A: The plugin only processes Markdown (.md) files. Other file types (images, PDFs, etc.) are ignored to keep the analysis focused and efficient.
 
 ### Q: How expensive is it to run?
-A: It’s affordable with control in your hands. For my own vault with thousands of notes from the last few years - using GPT-4o mini, it’s around $0.15 per run — roughly $5/month for daily reviews. Larger vault? You might want to exclude folders in settings for big savings. Prefer a more advanced and pricier model? Costs can rise. The plugin estimates costs upfront—if it’s too high, close Obsidian while the plugin is running (this will stop processing). Reopen, tweak exclusions in settings, and try again.
+
+A: It's affordable with control in your hands. For my own vault with thousands of notes from the last few years - using GPT-4o mini, it's around $0.15 per run — roughly $5/month for daily reviews. The plugin estimates costs upfront—if it's too high, close Obsidian while the plugin is running (this will stop processing). Reopen, tweak exclusions in settings, and try again.
 
 ### Q: How does chunking work?
 A: Chunking (batching) helps by processing notes in smaller sections to:
@@ -200,7 +199,7 @@ A: Chunking (batching) helps by processing notes in smaller sections to:
 2. Stay within API context token limits
 3. Maintain context across related notes
 
-It might take a few minutes to process a larger vault. For best results think carefully whether there are more folders you can exclude from processing. Using more affordable model (GPT-4o mini or Haiku can help reduce costs). 
+It might take a few minutes to process a larger vault. For best results think carefully whether there are more folders you can exclude from processing.
 
 ### Q: Can I integrate other AI models?
 A: The plugin currently supports Claude 3.5 and OpenAI GPT-4o models. Pull requests are gladly accepted.
@@ -222,4 +221,3 @@ Both OpenAI and Anthropic do not use data submitted via API for training, unless
 This project and it's mission was inspired by [Fabric](https://github.com/danielmiessler/fabric), an open-source framework for human-AI augmentation.
 
 `Deep Insight` was created by <a href="https://www.linkedin.com/in/radekmaciaszek/" target="_blank">Radek Maciaszek</a> in November of 2024.
-
