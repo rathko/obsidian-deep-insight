@@ -103,14 +103,6 @@ export class PatternSettings {
                     await this.plugin.saveSettings();
                 }));
     
-        const patternManager = PatternManager.getInstance(
-            this.plugin.app.vault,
-            {
-                enabled: this.plugin.settings.patterns.enabled,
-                patternsPath: this.plugin.settings.patterns.folderPath
-            }
-        );
-    
         const buttonText = this.plugin.settings.patterns.installed ? 
             `Update Patterns` : 
             'Install Patterns';
@@ -118,7 +110,7 @@ export class PatternSettings {
         const descFragment = document.createDocumentFragment();
         descFragment.append(
             'Install or update bundled Fabric patterns. To install all Fabric patterns, see: ',
-            createEl('a', { 
+            this.containerEl.createEl('a', { 
                 text: 'installation guide',
                 href: 'https://github.com/rathko/obsidian-deep-insight?tab=readme-ov-file#pattern-structure',
                 cls: 'external-link'

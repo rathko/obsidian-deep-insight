@@ -3,21 +3,27 @@ import { DeepInsightError } from '../error/types';
 import { ERROR_MESSAGES, UI_MESSAGES } from '../../constants';
 import { DeepInsightAISettings } from '../../types';
 
+type NetworkError = DeepInsightError | Error;
+
 interface QueueItem {
     params: RequestUrlParam;
     resolve: (value: RequestUrlResponse) => void;
-    reject: (error: any) => void;
+    reject: (error: NetworkError) => void;
     retries: number;
 }
 
 export class NetworkManager {
     private static instance: NetworkManager;
+    private readonly MIN_REQUEST_INTERVAL = 500;
+    private readonly MAX_RETRY_DELAY = 32000;
+    private readonly JITTER_MAX = 1000;
+    private readonly BASE_DELAY = 1000;
+
     private queue: QueueItem[] = [];
     private isProcessing = false;
     private lastRequestTime = 0;
     private settings!: DeepInsightAISettings;
     private isOnline = navigator.onLine;
-    private readonly MIN_REQUEST_INTERVAL = 500;
 
     private constructor() {
         window.addEventListener('online', () => this.isOnline = true);
@@ -50,7 +56,7 @@ export class NetworkManager {
             });
         }
     
-        return new Promise((resolve, reject) => {
+        return new Promise<RequestUrlResponse>((resolve, reject) => {
             this.queue.push({ params, resolve, reject, retries: 0 });
             void this.processQueue();
         });
@@ -71,57 +77,42 @@ export class NetworkManager {
             item.resolve(response);
             this.lastRequestTime = Date.now();
         } catch (error) {
-            item.reject(error);
+            item.reject(error instanceof Error ? error : new Error(String(error)));
         } finally {
             clearInterval();
             notice.hide();
             this.queue.shift();
             this.isProcessing = false;
-            if (this.queue.length > 0) {
-                void this.processQueue();
-            }
+            void this.processQueue();
         }
     }
 
     private async executeWithRetry(item: QueueItem): Promise<RequestUrlResponse> {
-        let lastError: unknown;
+        let lastError: NetworkError = new Error('Unknown error');
     
         for (let attempt = 1; attempt <= this.settings.retryAttempts; attempt++) {
             try {
                 const response = await requestUrl(item.params);
+                
                 if (response.status === 429) {
-                    const retryAfter = response.headers?.['retry-after'];
-                    const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : this.calculateRetryDelay(attempt);
+                    const retryAfter = parseInt(response.headers?.['retry-after'] ?? '0');
+                    const waitTime = retryAfter ? retryAfter * 1000 : this.calculateRetryDelay(attempt);
                     
-                    new Notice(
-                        ERROR_MESSAGES.PROCESSING.RATE_LIMIT_RETRY(
-                            attempt,
-                            this.settings.retryAttempts,
-                            Math.ceil(waitTime/1000)
-                        ), 
-                        waitTime
-                    );
-                    
+                    this.showRetryNotice(attempt, waitTime);
                     await this.delay(waitTime);
                     continue;
                 }
+                
                 return response;
             } catch (error) {
-                lastError = error;
+                lastError = error instanceof Error ? error : new Error(String(error));
+                
                 if (attempt === this.settings.retryAttempts) {
                     break;
                 }
                 
                 const retryDelay = this.calculateRetryDelay(attempt);
-                new Notice(
-                    ERROR_MESSAGES.PROCESSING.RETRY(
-                        attempt,
-                        this.settings.retryAttempts,
-                        Math.ceil(retryDelay/1000)
-                    ),
-                    retryDelay
-                );
-                
+                this.showRetryNotice(attempt, retryDelay);
                 await this.delay(retryDelay);
             }
         }
@@ -132,23 +123,25 @@ export class NetworkManager {
         });
     }
 
-    /**
-    * Calculates delay time for retry attempts using exponential backoff with jitter.
-    * @param retryCount - Current retry attempt number
-    * @returns Delay in milliseconds, capped at 32 seconds
-    * 
-    * Formula: delay = min(base * 2^(retry-1) + random(0-1000), 32000)
-    * Example sequence (without jitter):
-    * Retry 1: 1000ms
-    * Retry 2: 2000ms 
-    * Retry 3: 4000ms
-    * Retry 4: 8000ms
-    * etc.
-    */
     private calculateRetryDelay(retryCount: number): number {
-        const baseDelay = 1000 * Math.pow(2, retryCount - 1);
-        const jitter = Math.random() * 1000;
-        return Math.min(baseDelay + jitter, 32000);
+        const baseDelay = this.BASE_DELAY * Math.pow(2, retryCount - 1);
+        const jitter = Math.random() * this.JITTER_MAX;
+        return Math.min(baseDelay + jitter, this.MAX_RETRY_DELAY);
+    }
+
+    private showRetryNotice(attempt: number, delay: number): void {
+        const message = attempt === this.settings.retryAttempts 
+            ? ERROR_MESSAGES.PROCESSING.RATE_LIMIT_RETRY
+            : ERROR_MESSAGES.PROCESSING.RETRY;
+            
+        new Notice(
+            message(
+                attempt,
+                this.settings.retryAttempts,
+                Math.ceil(delay / 1000)
+            ),
+            delay
+        );
     }
 
     private getTimeToWait(): number {

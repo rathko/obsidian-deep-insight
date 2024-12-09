@@ -36,17 +36,17 @@ export default class DeepInsightAI extends Plugin {
         this.initializeProvider();
     
         this.addCommand({
-            id: 'generate-insights',
-            name: 'Generate Insights and Tasks from Notes',
-            editorCallback: (editor: Editor) => this.generateTasks(editor),
-        });
-
-        this.addCommand({
             id: 'run-pattern-globally',
             name: 'Run Pattern on Vault',
             callback: () => this.handleGlobalPatternCommand(),
         });
     
+        this.addCommand({
+            id: 'generate-insights',
+            name: 'Generate Insights and Tasks from Notes',
+            editorCallback: () => this.generateTasks(),
+        });
+
         this.patternManager = PatternManager.getInstance(this.app.vault, {
             enabled: this.settings.patterns.enabled,
             patternsPath: this.settings.patterns.folderPath,
@@ -107,8 +107,9 @@ export default class DeepInsightAI extends Plugin {
         }
     }
 
-    async generateTasks(editor: Editor): Promise<void> {
-        if (!this.validatePrerequisites()) {
+    async generateTasks(): Promise<void> {
+        const editor = this.validateExecutionPrerequisites();
+        if (!editor) {
             return;
         }
 
@@ -147,21 +148,27 @@ export default class DeepInsightAI extends Plugin {
         }
     }
 
-    private validatePrerequisites(): boolean {
+    public validateExecutionPrerequisites(editor?: Editor): Editor | null {
         if (this.isProcessing) {
-            new Notice('Already processing notes. Please wait...');
-            return false;
+            new Notice(UI_MESSAGES.ALREADY_PROCESSING);
+            return null;
         }
-
+    
         if (!InputValidator.validateApiKey(
             this.settings.provider.apiKey, 
             this.settings.provider.type
         )) {
             new Notice(`Please set a valid ${this.settings.provider.type} API key in settings`);
-            return false;
+            return null;
         }
-
-        return true;
+    
+        const activeEditor = editor || this.getActiveEditor();
+        if (!activeEditor) {
+            new Notice(UI_MESSAGES.EDITOR_NOTE);
+            return null;
+        }
+    
+        return activeEditor;
     }
 
     private async handleCostEstimate(chunkCount: number): Promise<void> {
@@ -316,9 +323,8 @@ export default class DeepInsightAI extends Plugin {
     }
 
     private async runPattern(pattern: Pattern, file: TAbstractFile): Promise<void> {
-        const editor = this.lastActiveEditor || this.getActiveEditor();
+        const editor = this.validateExecutionPrerequisites();
         if (!editor) {
-            new Notice('No editor found. Please make sure you have a note open and a cursor position selected.');
             return;
         }
 
@@ -362,13 +368,8 @@ export default class DeepInsightAI extends Plugin {
     }
 
     private async handleGlobalPatternCommand(): Promise<void> {
-        if (!this.validateGlobalPatternPrerequisites()) {
-            return;
-        }
-
-        const editor = this.getActiveEditor();
+        const editor = this.validateExecutionPrerequisites();
         if (!editor) {
-            new Notice('Please open a note where you want to see the results.');
             return;
         }
 
@@ -382,14 +383,6 @@ export default class DeepInsightAI extends Plugin {
             patterns,
             (pattern) => this.executeGlobalPattern(pattern, editor)
         ).open();
-    }
-
-    private validateGlobalPatternPrerequisites(): boolean {
-        if (!this.settings.patterns.enabled) {
-            new Notice('Patterns are not enabled. Please enable them in settings first.');
-            return false;
-        }
-        return this.validatePrerequisites();
     }
 
     private async loadAvailablePatterns(): Promise<Pattern[]> {

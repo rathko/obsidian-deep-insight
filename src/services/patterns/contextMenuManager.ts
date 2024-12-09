@@ -51,11 +51,13 @@ export class ContextMenuManager {
 
     unregister(): void {
         if (this.fileMenuEvent) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this.plugin.app.workspace.off('file-menu', this.fileMenuEvent as any);
             this.fileMenuEvent = null;
         }
 
         if (this.editorMenuEvent) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this.plugin.app.workspace.off('editor-menu', this.editorMenuEvent as any);
             this.editorMenuEvent = null;
         }

@@ -1,9 +1,8 @@
 import { App, Notice, Setting, PluginSettingTab, TFile, SuggestModal, DropdownComponent } from 'obsidian';
 import { DEFAULT_PROMPTS } from './defaultPrompts';
 import { AIProvider, AIModel, DeepInsightAISettings } from './types';
-import { AI_MODELS, API_CONSTANTS, PATTERN_DEFAULTS } from './constants';
+import { AI_MODELS, API_CONSTANTS } from './constants';
 import type DeepInsightAI from './main';
-import { PatternManager } from './services/patterns/patternManager';
 import { PatternSettings } from './services/patterns/patternSettings';
 
 export class PromptNotesModal extends SuggestModal<TFile> {

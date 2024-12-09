@@ -114,10 +114,10 @@ export const UI_MESSAGES = {
     SUCCESS: '✨ Analysis complete!',
     COMBINING: '🎭 Combining multiple sections...',
     NETWORK_ERROR: '📡 Connection error: Please check your network',
-    API_ERROR: '❌ API error: Please check your settings',
-    RATE_LIMIT: '⚠️ Rate limit reached: Please try again later',
     WAITING_RESPONSE: '🤔 Waiting for AI response...',
-    RETRY_ATTEMPT: '🔄 Retrying request...'
+    RETRY_ATTEMPT: '🔄 Retrying request...',
+    EDITOR_NOTE: 'Please open a note where you want to see the results.',
+    ALREADY_PROCESSING: 'Already processing notes. Please wait...',
 } as const;
 
 export const ERROR_MESSAGES = {
