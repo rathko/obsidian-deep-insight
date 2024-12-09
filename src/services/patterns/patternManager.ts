@@ -1,11 +1,11 @@
-import { Vault, TFile, normalizePath, TFolder, Editor, Notice } from 'obsidian';
-import { Pattern, PatternFile, PatternConfig } from './types';
+import { Vault, TFile, normalizePath, TFolder, Editor, Notice, TAbstractFile } from 'obsidian';
+import { Pattern, PatternFile, PatternConfig, ProcessingOptions } from './types';
 import { createHash } from 'crypto';
 import { BundledPatternsManager } from './bundledPatternsManager';
 import DeepInsightAI from 'src/main';
 import { ContentProcessor } from '../content/processor';
 import { DeepInsightError } from '../error/types';
-import { CostTracker } from 'src/costTracker';
+import { ErrorHandler } from '../error/handler';
 
 export class PatternManager {
     private static instance: PatternManager;
@@ -46,7 +46,6 @@ export class PatternManager {
                     if (pattern) {
                         this.patterns.set(pattern.id, pattern);
                     }
-                    // Also scan subfolders
                     await this.scanPatterns(child);
                 } else if (child instanceof TFile && 
                           child.extension === 'md' && 
@@ -102,13 +101,12 @@ export class PatternManager {
             }
         }
 
-        // Treat single file patterns as folders with just a system prompt
         const name = file.basename;
         return {
             id: file.path,
             name: name,
             path: file.path,
-            type: 'folder',  // Treat all patterns as folder type for consistent display
+            type: 'folder',
             system: await this.vault.cachedRead(file)
         };
     }
@@ -135,17 +133,12 @@ export class PatternManager {
     async installPatterns(sourcePath: string, targetPath: string): Promise<void> {
         const normalizedTarget = normalizePath(targetPath);
         
-        // Ensure target directory exists
         if (!await this.vault.adapter.exists(normalizedTarget)) {
             await this.vault.createFolder(normalizedTarget);
         }
 
         const existingFiles = new Map<string, PatternFile>();
-        
-        // Gather existing files
         await this.gatherExistingFiles(normalizedTarget, existingFiles);
-        
-        // Copy new patterns
         await this.copyPatterns(sourcePath, normalizedTarget, existingFiles);
     }
 
@@ -176,7 +169,6 @@ export class PatternManager {
         targetPath: string,
         existingFiles: Map<string, PatternFile>
     ): Promise<void> {
-        // Read bundled patterns
         const bundledPatterns = await this.readBundledPatterns();
         
         for (const [path, content] of bundledPatterns) {
@@ -184,12 +176,10 @@ export class PatternManager {
             const existing = existingFiles.get(targetFile);
 
             if (path.endsWith('user.md') && existing) {
-                // For user.md files, only copy if unchanged from original
                 if (this.calculateHash(existing.content) === this.calculateHash(content)) {
                     await this.vault.adapter.write(targetFile, content);
                 }
             } else {
-                // For all other files, always copy
                 const targetDir = targetFile.substring(0, targetFile.lastIndexOf('/'));
                 if (!await this.vault.adapter.exists(targetDir)) {
                     await this.vault.createFolder(targetDir);
@@ -203,11 +193,12 @@ export class PatternManager {
         return BundledPatternsManager.getBundledPatterns();
     }
 
-    async executePatternOnVault(
-        pattern: Pattern, 
+    async executePatternOnSelection(
+        pattern: Pattern,
         editor: Editor,
         mainPlugin: DeepInsightAI,
-        contentProcessor: ContentProcessor
+        contentProcessor: ContentProcessor,
+        targetFile?: TAbstractFile
     ): Promise<void> {
         if (!pattern || !editor) {
             throw new DeepInsightError({
@@ -215,25 +206,51 @@ export class PatternManager {
                 message: 'Missing required parameters for pattern execution'
             });
         }
-    
-        const chunks = await contentProcessor.processContent();
-        
-        if (mainPlugin.settings.showCostSummary) {
-            const costTracker = new CostTracker(mainPlugin.provider!);
-            const estimate = costTracker.generateInitialCostEstimate(chunks.length);
-            new Notice(estimate, 10000);
+
+        if (mainPlugin.costTracker) {
+            mainPlugin.costTracker.reset();
         }
-    
-        const options = {
+
+        try {
+            const chunks = await contentProcessor.processContent(targetFile);
+            
+            if (chunks.length === 0) {
+                new Notice('No content to process.');
+                return;
+            }
+
+            if (mainPlugin.costTracker) {
+                const estimate = mainPlugin.costTracker.generateInitialCostEstimate(chunks.length);
+                new Notice(estimate, 10000);
+            }
+
+            const result = await this.processChunks(chunks, pattern, mainPlugin);
+            if (result) {
+                await mainPlugin.insertContent(editor, result);
+                mainPlugin.showSuccessMessage();
+            }
+        } catch (error) {
+            ErrorHandler.handle(error);
+        }
+    }
+
+    private async processChunks(
+        chunks: { content: string; size: number }[],
+        pattern: Pattern,
+        mainPlugin: DeepInsightAI
+    ): Promise<string | null> {
+        const options: ProcessingOptions = {
             systemPrompt: pattern.system || mainPlugin.settings.defaultSystemPrompt,
             userPrompt: mainPlugin.settings.defaultUserPrompt
         };
-    
-        const result = chunks.length === 1 
-            ? await mainPlugin.processChunk(chunks[0].content, options)
-            : await mainPlugin.processChunks(chunks, options);
-    
-        await mainPlugin.insertContent(editor, result);
-        mainPlugin.showSuccessMessage();
+
+        try {
+            return chunks.length === 1
+                ? await mainPlugin.processChunk(chunks[0].content, options)
+                : await mainPlugin.processChunks(chunks, options);
+        } catch (error) {
+            console.error('Error processing chunks:', error);
+            return null;
+        }
     }
 }

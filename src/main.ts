@@ -19,9 +19,9 @@ import { ContextMenuManager } from './services/patterns/contextMenuManager';
 
 export default class DeepInsightAI extends Plugin {
     public provider?: AIProvider;
+    public costTracker?: CostTracker;
     settings!: DeepInsightAISettings;
     private networkManager!: NetworkManager;
-    private costTracker?: CostTracker;
     private isProcessing = false;
     private patternManager!: PatternManager;
     private contextMenuManager!: ContextMenuManager;
@@ -327,17 +327,12 @@ export default class DeepInsightAI extends Plugin {
         if (!editor) {
             return;
         }
-
+    
         try {
             if (this.costTracker) {
                 this.costTracker.reset();
             }
-
-            const options: ProcessingOptions = {
-                systemPrompt: pattern.system || this.settings.defaultSystemPrompt,
-                userPrompt: this.settings.defaultUserPrompt
-            };
-
+    
             const contentProcessor = new ContentProcessor(
                 this.app.vault,
                 {
@@ -346,14 +341,14 @@ export default class DeepInsightAI extends Plugin {
                 },
                 TestModeManager.getInstance()
             );
-
-            const chunks = await contentProcessor.processContent(file);
-            const result = chunks.length === 1 
-                ? await this.processChunk(chunks[0].content, options)
-                : await this.processChunks(chunks, options);
-
-            await this.insertContent(editor, result);
-            this.showSuccessMessage();
+    
+            await this.patternManager.executePatternOnSelection(
+                pattern,
+                editor,
+                this,
+                contentProcessor,
+                file
+            );
         } catch (error) {
             ErrorHandler.handle(error);
         }
@@ -406,7 +401,7 @@ export default class DeepInsightAI extends Plugin {
             TestModeManager.getInstance()
         );
 
-        await this.patternManager.executePatternOnVault(
+        await this.patternManager.executePatternOnSelection(
             pattern,
             editor,
             this,
