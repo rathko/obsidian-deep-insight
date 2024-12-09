@@ -3,7 +3,7 @@ import { DeepInsightAISettings } from './types';
 import { ModelConfig } from './services/ai/types';
 
 export const PATTERN_DEFAULTS = {
-    DEFAULT_PATTERNS_FOLDER: 'Deep Insight Fabric Patterns',
+    DEFAULT_PATTERNS_FOLDER: 'Deep Insight Patterns',
     SYSTEM_PROMPT_FILE: 'system.md',
     USER_PROMPT_FILE: 'user.md',
 } as const;
@@ -118,6 +118,7 @@ export const UI_MESSAGES = {
     RETRY_ATTEMPT: '🔄 Retrying request...',
     EDITOR_NOTE: 'Please open a note where you want to see the results.',
     ALREADY_PROCESSING: 'Already processing notes. Please wait...',
+    NO_PATTERNS_FOUND: 'No patterns found. Please install patterns first.'
 } as const;
 
 export const ERROR_MESSAGES = {

@@ -309,7 +309,7 @@ export default class DeepInsightAI extends Plugin {
         const patterns = this.patternManager.getAllPatterns();
         
         if (patterns.length === 0) {
-            new Notice('No patterns found. Please install patterns first.');
+            new Notice(UI_MESSAGES.NO_PATTERNS_FOUND);
             return;
         }
 
@@ -385,7 +385,7 @@ export default class DeepInsightAI extends Plugin {
         const patterns = this.patternManager.getAllPatterns();
         
         if (!patterns.length) {
-            new Notice('No patterns found. Please install patterns first.');
+            new Notice(UI_MESSAGES.NO_PATTERNS_FOUND);
         }
         
         return patterns;

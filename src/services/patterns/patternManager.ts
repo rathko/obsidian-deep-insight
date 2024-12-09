@@ -46,16 +46,6 @@ export class PatternManager {
                     if (pattern) {
                         this.patterns.set(pattern.id, pattern);
                     }
-                    await this.scanPatterns(child);
-                } else if (child instanceof TFile && 
-                          child.extension === 'md' && 
-                          child.name.toLowerCase() !== 'system.md' && 
-                          child.name.toLowerCase() !== 'user.md' &&
-                          child.name.toLowerCase() !== 'readme.md') {
-                    const pattern = await this.processPatternFile(child);
-                    if (pattern) {
-                        this.patterns.set(pattern.id, pattern);
-                    }
                 }
             } catch (error) {
                 console.error(`Error loading pattern from ${child.path}:`, error);
@@ -87,28 +77,6 @@ export class PatternManager {
         }
     
         return pattern;
-    }
-
-    private async processPatternFile(file: TFile): Promise<Pattern | null> {
-        if (file.name === 'system.md' || file.name === 'user.md') {
-            return null;
-        }
-
-        if (file.parent) {
-            const siblings = file.parent.children;
-            if (siblings.some(f => f.name === 'system.md' || f.name === 'user.md')) {
-                return null;
-            }
-        }
-
-        const name = file.basename;
-        return {
-            id: file.path,
-            name: name,
-            path: file.path,
-            type: 'folder',
-            system: await this.vault.cachedRead(file)
-        };
     }
 
     getPattern(id: string): Pattern | undefined {

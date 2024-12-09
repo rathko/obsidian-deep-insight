@@ -112,7 +112,7 @@ export class PatternSettings {
             'Install or update bundled Fabric patterns. To install all Fabric patterns, see: ',
             this.containerEl.createEl('a', { 
                 text: 'installation guide',
-                href: 'https://github.com/rathko/obsidian-deep-insight?tab=readme-ov-file#pattern-structure',
+                href: 'https://github.com/rathko/obsidian-deep-insight?tab=readme-ov-file#patterns',
                 cls: 'external-link'
             })
         );
