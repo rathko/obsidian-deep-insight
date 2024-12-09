@@ -1,7 +1,11 @@
-import { Vault, TFile, normalizePath, TFolder } from 'obsidian';
+import { Vault, TFile, normalizePath, TFolder, Editor, Notice } from 'obsidian';
 import { Pattern, PatternFile, PatternConfig } from './types';
 import { createHash } from 'crypto';
 import { BundledPatternsManager } from './bundledPatternsManager';
+import DeepInsightAI from 'src/main';
+import { ContentProcessor } from '../content/processor';
+import { DeepInsightError } from '../error/types';
+import { CostTracker } from 'src/costTracker';
 
 export class PatternManager {
     private static instance: PatternManager;
@@ -197,5 +201,39 @@ export class PatternManager {
 
     private async readBundledPatterns(): Promise<Map<string, string>> {
         return BundledPatternsManager.getBundledPatterns();
+    }
+
+    async executePatternOnVault(
+        pattern: Pattern, 
+        editor: Editor,
+        mainPlugin: DeepInsightAI,
+        contentProcessor: ContentProcessor
+    ): Promise<void> {
+        if (!pattern || !editor) {
+            throw new DeepInsightError({
+                type: 'PATTERN_ERROR',
+                message: 'Missing required parameters for pattern execution'
+            });
+        }
+    
+        const chunks = await contentProcessor.processContent();
+        
+        if (mainPlugin.settings.showCostSummary) {
+            const costTracker = new CostTracker(mainPlugin.provider!);
+            const estimate = costTracker.generateInitialCostEstimate(chunks.length);
+            new Notice(estimate, 10000);
+        }
+    
+        const options = {
+            systemPrompt: pattern.system || mainPlugin.settings.defaultSystemPrompt,
+            userPrompt: mainPlugin.settings.defaultUserPrompt
+        };
+    
+        const result = chunks.length === 1 
+            ? await mainPlugin.processChunk(chunks[0].content, options)
+            : await mainPlugin.processChunks(chunks, options);
+    
+        await mainPlugin.insertContent(editor, result);
+        mainPlugin.showSuccessMessage();
     }
 }

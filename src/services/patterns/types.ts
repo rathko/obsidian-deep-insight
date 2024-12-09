@@ -17,3 +17,9 @@ export interface PatternConfig {
     enabled: boolean;
     patternsPath: string;
 }
+
+export interface ProcessingOptions {
+    systemPrompt: string;
+    userPrompt: string;
+    isCombining?: boolean;
+}

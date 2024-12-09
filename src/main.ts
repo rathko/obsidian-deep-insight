@@ -1,4 +1,4 @@
-import { Plugin, TAbstractFile, MarkdownView, Notice, Editor, Menu, EventRef } from 'obsidian';
+import { Plugin, TAbstractFile, MarkdownView, Notice, Editor } from 'obsidian';
 import { DEFAULT_SETTINGS, UI_MESSAGES } from './constants';
 import { CostTracker } from './costTracker';
 import { DeepInsightAISettingTab } from './settings';
@@ -14,14 +14,14 @@ import { InputValidator } from './utils/validation';
 import { PromptManager } from './utils/prompts';
 import { PatternSelectionModal } from './services/patterns/patternModal';
 import { PatternManager } from './services/patterns/patternManager';
-import { Pattern } from './services/patterns/types';
+import { Pattern, ProcessingOptions } from './services/patterns/types';
 import { ContextMenuManager } from './services/patterns/contextMenuManager';
 
 export default class DeepInsightAI extends Plugin {
+    public provider?: AIProvider;
     settings!: DeepInsightAISettings;
     private networkManager!: NetworkManager;
     private costTracker?: CostTracker;
-    private provider?: AIProvider;
     private isProcessing = false;
     private patternManager!: PatternManager;
     private contextMenuManager!: ContextMenuManager;
@@ -39,6 +39,12 @@ export default class DeepInsightAI extends Plugin {
             id: 'generate-insights',
             name: 'Generate Insights and Tasks from Notes',
             editorCallback: (editor: Editor) => this.generateTasks(editor),
+        });
+
+        this.addCommand({
+            id: 'run-pattern-globally',
+            name: 'Run Pattern on Vault',
+            callback: () => this.handleGlobalPatternCommand(),
         });
     
         this.patternManager = PatternManager.getInstance(this.app.vault, {
@@ -112,7 +118,28 @@ export default class DeepInsightAI extends Plugin {
             if (this.costTracker) {
                 this.costTracker.reset();
             }
-            await this.processNotes(editor);
+
+            const { systemPrompt, userPrompt } = await this.getPrompts();
+            const contentProcessor = new ContentProcessor(
+                this.app.vault,
+                this.settings,
+                TestModeManager.getInstance()
+            );
+
+            const chunks = await contentProcessor.processContent();
+            await this.handleCostEstimate(chunks.length);
+            
+            const options: ProcessingOptions = {
+                systemPrompt,
+                userPrompt
+            };
+
+            const result = chunks.length === 1 
+                ? await this.processChunk(chunks[0].content, options)
+                : await this.processChunks(chunks, options);
+
+            await this.insertContent(editor, result);
+            this.showSuccessMessage();
         } catch (error) {
             ErrorHandler.handle(error);
         } finally {
@@ -135,30 +162,6 @@ export default class DeepInsightAI extends Plugin {
         }
 
         return true;
-    }
-
-    private async processNotes(editor: Editor): Promise<void> {
-        new Notice('🔍 Starting analysis...');
-
-        if (this.settings.testMode.enabled) {
-            new Notice('⚠️ Running in test mode. Results will be limited.', 5000);
-        }
-
-        const contentProcessor = new ContentProcessor(
-            this.app.vault,
-            this.settings,
-            TestModeManager.getInstance()
-        );
-
-        const chunks = await contentProcessor.processContent();
-        await this.handleCostEstimate(chunks.length);
-        
-        const result = chunks.length === 1 
-            ? await this.processChunk(chunks[0].content) 
-            : await this.processChunks(chunks);
-
-        await this.insertTasks(editor, result);
-        this.showSuccessMessage();
     }
 
     private async handleCostEstimate(chunkCount: number): Promise<void> {
@@ -187,7 +190,10 @@ export default class DeepInsightAI extends Plugin {
         return { systemPrompt, userPrompt };
     }
 
-    private async processChunk(content: string, isCombining = false): Promise<string> {
+    public async processChunk(
+        content: string, 
+        options: ProcessingOptions
+    ): Promise<string> {
         if (!this.provider) {
             throw new DeepInsightError({
                 type: 'PROCESSING_ERROR',
@@ -195,14 +201,18 @@ export default class DeepInsightAI extends Plugin {
             });
         }
 
-        const { systemPrompt, userPrompt } = await this.getPrompts();
-        const promptContent = isCombining 
+        const promptContent = options.isCombining 
             ? content 
             : `Notes Content:\n${content}`;
 
         const messages: AIMessage[] = [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `${userPrompt}\n\n${promptContent}` }
+            { role: 'system', content: options.systemPrompt },
+            { 
+                role: 'user', 
+                content: this.settings.includeUserContext 
+                    ? `${options.userPrompt}\n\n${promptContent}`
+                    : promptContent
+            }
         ];
 
         const response = await this.provider.generateResponse(messages);
@@ -214,8 +224,10 @@ export default class DeepInsightAI extends Plugin {
         return response.content;
     }
 
-    private async processChunks(
-        chunks: { content: string; size: number }[]
+
+    public async processChunks(
+        chunks: { content: string; size: number }[],
+        options: ProcessingOptions
     ): Promise<string> {
         const results: string[] = [];
 
@@ -225,24 +237,27 @@ export default class DeepInsightAI extends Plugin {
             ];
             
             new Notice(`${randomMessage} (${i + 1}/${chunks.length})`);
-            const result = await this.processChunk(chunks[i].content);
+            const result = await this.processChunk(chunks[i].content, options);
             results.push(result);
         }
 
         new Notice(UI_MESSAGES.COMBINING);
         const combinedContent = results.join('\n\n=== Next Section ===\n\n');
         
-        return this.processChunk(combinedContent, true);
+        return this.processChunk(combinedContent, {
+            ...options,
+            isCombining: true
+        });
     }
 
-    private async insertTasks(editor: Editor, content: string): Promise<void> {
+    async insertContent(editor: Editor, content: string): Promise<void> {
         const cursor = editor.getCursor();
         
         if (cursor && typeof cursor.line === 'number' && typeof cursor.ch === 'number') {
             editor.replaceRange(content, cursor);
             return;
         }
-
+    
         const lastLine = editor.lastLine();
         const lastLineContent = editor.getLine(lastLine);
         const extraNewline = lastLineContent.trim() ? '\n' : '';
@@ -253,7 +268,7 @@ export default class DeepInsightAI extends Plugin {
         });
     }
 
-    private showSuccessMessage(): void {
+    showSuccessMessage(): void {
         let message = UI_MESSAGES.SUCCESS;
 
         if (this.settings.showCostSummary && this.costTracker) {
@@ -311,9 +326,12 @@ export default class DeepInsightAI extends Plugin {
             if (this.costTracker) {
                 this.costTracker.reset();
             }
-            const systemPrompt = pattern.system || this.settings.defaultSystemPrompt;
-            const userPrompt = this.settings.defaultUserPrompt;
-            
+
+            const options: ProcessingOptions = {
+                systemPrompt: pattern.system || this.settings.defaultSystemPrompt,
+                userPrompt: this.settings.defaultUserPrompt
+            };
+
             const contentProcessor = new ContentProcessor(
                 this.app.vault,
                 {
@@ -325,79 +343,14 @@ export default class DeepInsightAI extends Plugin {
 
             const chunks = await contentProcessor.processContent(file);
             const result = chunks.length === 1 
-                ? await this.processPatternChunk(chunks[0].content, systemPrompt, userPrompt) 
-                : await this.processPatternChunks(chunks, systemPrompt, userPrompt);
+                ? await this.processChunk(chunks[0].content, options)
+                : await this.processChunks(chunks, options);
 
-            await this.insertTasks(editor, result);
+            await this.insertContent(editor, result);
             this.showSuccessMessage();
         } catch (error) {
             ErrorHandler.handle(error);
         }
-    }
-
-    private async processPatternChunk(
-        content: string,
-        systemPrompt: string,
-        userPrompt: string,
-        isCombining = false
-    ): Promise<string> {
-        if (!this.provider) {
-            throw new DeepInsightError({
-                type: 'PROCESSING_ERROR',
-                message: 'AI provider not initialized'
-            });
-        }
-    
-        const promptContent = isCombining ? content : `Notes Content:\n${content}`;
-        const messages: AIMessage[] = [
-            { role: 'system' as const, content: systemPrompt },
-            { 
-                role: 'user' as const, 
-                content: this.settings.includeUserContext 
-                    ? `${userPrompt}\n\n${promptContent}`
-                    : promptContent
-            }
-        ];
-    
-        const response = await this.provider.generateResponse(messages);
-        
-        if (this.costTracker && response.usage) {
-            this.costTracker.addUsage(response.usage);
-        }
-    
-        return response.content;
-    }
-
-    private async processPatternChunks(
-        chunks: { content: string; size: number }[],
-        systemPrompt: string,
-        userPrompt: string
-    ): Promise<string> {
-        const results: string[] = [];
-
-        for (let i = 0; i < chunks.length; i++) {
-            const randomMessage = UI_MESSAGES.PROCESSING[
-                Math.floor(Math.random() * UI_MESSAGES.PROCESSING.length)
-            ];
-            
-            new Notice(`${randomMessage} (${i + 1}/${chunks.length})`);
-            const result = await this.processPatternChunk(
-                chunks[i].content,
-                systemPrompt,
-                userPrompt
-            );
-            results.push(result);
-        }
-
-        new Notice(UI_MESSAGES.COMBINING);
-        const combinedContent = results.join('\n\n=== Next Section ===\n\n');
-        
-        return this.processPatternChunk(
-            combinedContent,
-            systemPrompt,
-            userPrompt,
-            true
-        );
     }
 
     private getActiveEditor(): Editor | null {
@@ -406,5 +359,65 @@ export default class DeepInsightAI extends Plugin {
         }
         const view = this.app.workspace.getActiveViewOfType(MarkdownView);
         return view?.editor || null;
+    }
+
+    private async handleGlobalPatternCommand(): Promise<void> {
+        if (!this.validateGlobalPatternPrerequisites()) {
+            return;
+        }
+
+        const editor = this.getActiveEditor();
+        if (!editor) {
+            new Notice('Please open a note where you want to see the results.');
+            return;
+        }
+
+        const patterns = await this.loadAvailablePatterns();
+        if (!patterns.length) {
+            return;
+        }
+
+        new PatternSelectionModal(
+            this.app,
+            patterns,
+            (pattern) => this.executeGlobalPattern(pattern, editor)
+        ).open();
+    }
+
+    private validateGlobalPatternPrerequisites(): boolean {
+        if (!this.settings.patterns.enabled) {
+            new Notice('Patterns are not enabled. Please enable them in settings first.');
+            return false;
+        }
+        return this.validatePrerequisites();
+    }
+
+    private async loadAvailablePatterns(): Promise<Pattern[]> {
+        await this.patternManager.loadPatterns();
+        const patterns = this.patternManager.getAllPatterns();
+        
+        if (!patterns.length) {
+            new Notice('No patterns found. Please install patterns first.');
+        }
+        
+        return patterns;
+    }
+
+    private async executeGlobalPattern(pattern: Pattern, editor: Editor): Promise<void> {
+        const contentProcessor = new ContentProcessor(
+            this.app.vault,
+            {
+                ...this.settings,
+                excludeFolders: []
+            },
+            TestModeManager.getInstance()
+        );
+
+        await this.patternManager.executePatternOnVault(
+            pattern,
+            editor,
+            this,
+            contentProcessor
+        );
     }
 }

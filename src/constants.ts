@@ -119,3 +119,34 @@ export const UI_MESSAGES = {
     WAITING_RESPONSE: '🤔 Waiting for AI response...',
     RETRY_ATTEMPT: '🔄 Retrying request...'
 } as const;
+
+export const ERROR_MESSAGES = {
+    TYPES: {
+        API_ERROR: 'API request failed',
+        NETWORK_ERROR: 'Network connection error',
+        AUTH_ERROR: 'Authentication failed',
+        RATE_LIMIT: 'Rate limit exceeded',
+        INVALID_REQUEST: 'Invalid request',
+        PROCESSING_ERROR: 'Error processing content',
+        PATTERN_ERROR: 'Pattern processing failed',
+        PATTERN_NOT_FOUND: 'Pattern not found',
+        PATTERN_INSTALLATION_ERROR: 'Failed to install patterns'
+    },
+    NETWORK: {
+        NOT_INITIALIZED: 'NetworkManager not initialized',
+        NO_CONNECTION: 'No internet connection',
+        RATE_LIMIT: (attempts: number, error?: unknown) => 
+            `Rate limit exceeded after ${attempts} attempts. ${error ? `Last error: ${error}` : ''}`
+    },
+    PROCESSING: {
+        RETRY: (attempt: number, maxAttempts: number, seconds: number) => 
+            `Request failed. Retrying in ${seconds}s... (Attempt ${attempt}/${maxAttempts})`,
+        RATE_LIMIT_RETRY: (attempt: number, maxAttempts: number, seconds: number) => 
+            `Rate limit reached. Retrying in ${seconds}s... (Attempt ${attempt}/${maxAttempts})`
+    },
+    API: {
+        INVALID_RESPONSE: 'Invalid API response format',
+        REQUEST_FAILED: (status: number) => `API request failed with status ${status}`
+    },
+    UNEXPECTED: 'An unexpected error occurred'
+} as const;
