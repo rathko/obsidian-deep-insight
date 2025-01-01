@@ -28,4 +28,5 @@ export interface PatternMetadata {
     id: string;
     name: string;
     path: string;
+    type: 'folder' | 'file';
 }

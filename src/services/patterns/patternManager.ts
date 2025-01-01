@@ -50,7 +50,8 @@ export class PatternManager {
                         const pattern: PatternMetadata = {
                             id: child.path,
                             name: child.name,
-                            path: child.path
+                            path: child.path,
+                            type: 'folder'
                         };
                         
                         this.patterns.set(pattern.id, pattern);

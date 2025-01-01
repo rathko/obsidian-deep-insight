@@ -103,8 +103,7 @@ export class NetworkManager {
                 const response = await requestUrl(item.params);
                 
                 if (response.status === 429) {
-                    const retryAfter = parseInt(response.headers?.['retry-after'] ?? '0');
-                    const waitTime = retryAfter ? retryAfter * 1000 : this.calculateRetryDelay(attempt);
+                    const waitTime = this.getWaitUntilNextMinute();
                     
                     errorDetails = {
                         statusCode: response.status,
@@ -220,5 +219,19 @@ export class NetworkManager {
         }, 1000);
 
         return { notice, clearInterval: () => clearInterval(interval) };
+    }
+
+    private getWaitUntilNextMinute(): number {
+        const now = new Date();
+        const nextMinute = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            now.getHours(),
+            now.getMinutes() + 1,
+            0,
+            0
+        );
+        return nextMinute.getTime() - now.getTime();
     }
 }
