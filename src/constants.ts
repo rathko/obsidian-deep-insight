@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS: DeepInsightAISettings = {
     maxTokensPerRequest: 90000,
     defaultSystemPrompt: DEFAULT_PROMPTS.system,
     defaultUserPrompt: DEFAULT_PROMPTS.user,
-    retryAttempts: 1,
+    retryAttempts: 2,
     showCostSummary: true,
     includeUserContext: true,
     testMode: {
@@ -85,13 +85,29 @@ export const API_CONSTANTS = {
         REQUEST_API_KEY: 'https://console.anthropic.com/settings/keys',
         API_VERSION: '2023-06-01',
         MAX_OUTPUT_TOKENS: 4000,
-        CHARS_PER_TOKEN: 4
+        CHARS_PER_TOKEN: 4,
+        RATE_LIMITS: {
+            TOKENS_PER_MINUTE: 50000,
+            CHUNK_SAFETY_FACTOR: 10,
+            MIN_REQUEST_INTERVAL: 500,
+            MAX_RETRY_DELAY: 32000,
+            JITTER_MAX: 1000,
+            BASE_DELAY: 1000
+        }
     },
     openai: {
         BASE_URL: 'https://api.openai.com/v1/chat/completions',
         REQUEST_API_KEY: 'https://platform.openai.com/api-keys',
         MAX_OUTPUT_TOKENS: 4096,
-        CHARS_PER_TOKEN: 4
+        CHARS_PER_TOKEN: 4,
+        RATE_LIMITS: {
+            TOKENS_PER_MINUTE: 90000,
+            CHUNK_SAFETY_FACTOR: 10,
+            MIN_REQUEST_INTERVAL: 500,
+            MAX_RETRY_DELAY: 32000,
+            JITTER_MAX: 1000,
+            BASE_DELAY: 1000
+        }
     }
 } as const;
 
@@ -137,7 +153,8 @@ export const ERROR_MESSAGES = {
         NOT_INITIALIZED: 'NetworkManager not initialized',
         NO_CONNECTION: 'No internet connection',
         RATE_LIMIT: (attempts: number, error?: unknown) => 
-            `Rate limit exceeded after ${attempts} attempts. ${error ? `Last error: ${error}` : ''}`
+            `Rate limit exceeded after ${attempts} attempts. ${error ? `Last error: ${error}` : ''}`,
+        UNKNOWN_ERROR: 'Unknown error'
     },
     PROCESSING: {
         RETRY: (attempt: number, maxAttempts: number, seconds: number) => 

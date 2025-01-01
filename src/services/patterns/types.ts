@@ -23,3 +23,9 @@ export interface ProcessingOptions {
     userPrompt: string;
     isCombining?: boolean;
 }
+
+export interface PatternMetadata {
+    id: string;
+    name: string;
+    path: string;
+}

@@ -1,5 +1,5 @@
 import { Vault, TFile, normalizePath, TFolder, Editor, Notice, TAbstractFile } from 'obsidian';
-import { Pattern, PatternFile, PatternConfig, ProcessingOptions } from './types';
+import { Pattern, PatternFile, PatternConfig, ProcessingOptions, PatternMetadata } from './types';
 import { createHash } from 'crypto';
 import { BundledPatternsManager } from './bundledPatternsManager';
 import DeepInsightAI from 'src/main';
@@ -9,7 +9,7 @@ import { ErrorHandler } from '../error/handler';
 
 export class PatternManager {
     private static instance: PatternManager;
-    private patterns: Map<string, Pattern> = new Map();
+    private patterns: Map<string, PatternMetadata> = new Map();
     
     private constructor(
         private vault: Vault,
@@ -39,59 +39,70 @@ export class PatternManager {
     }
 
     private async scanPatterns(folder: TFolder): Promise<void> {
+        let patternsFound = 0;
+        
         for (const child of folder.children) {
             try {
                 if (child instanceof TFolder) {
-                    const pattern = await this.processPatternFolder(child);
-                    if (pattern) {
+                    const hasSystemFile = child.children.some(f => f instanceof TFile && f.name === 'system.md');
+                    
+                    if (hasSystemFile) {
+                        const pattern: PatternMetadata = {
+                            id: child.path,
+                            name: child.name,
+                            path: child.path
+                        };
+                        
                         this.patterns.set(pattern.id, pattern);
+                        patternsFound++;
                     }
                 }
             } catch (error) {
-                console.error(`Error loading pattern from ${child.path}:`, error);
+                console.error(`Error scanning pattern from ${child.path}:`, error);
             }
+        }
+        
+        if (patternsFound === 0) {
+            throw new Error(`No valid patterns found in ${folder.path}`);
         }
     }
 
-    private async processPatternFolder(folder: TFolder): Promise<Pattern | null> {
-        const children = folder.children;
-        const systemFile = children.find(f => f instanceof TFile && f.name === 'system.md') as TFile | undefined;
-        const userFile = children.find(f => f instanceof TFile && f.name === 'user.md') as TFile | undefined;
-    
-        if (!systemFile && !userFile) {
-            return null;
+    async getPatternContent(patternId: string): Promise<Pattern> {
+        const metadata = this.patterns.get(patternId);
+        if (!metadata) {
+            throw new Error(`Pattern not found: ${patternId}`);
         }
-    
+
+        const folder = this.vault.getAbstractFileByPath(metadata.path);
+        if (!(folder instanceof TFolder)) {
+            throw new Error(`Pattern folder not found: ${metadata.path}`);
+        }
+
+        const systemFile = folder.children.find(f => f instanceof TFile && f.name === 'system.md') as TFile | undefined;
+        const userFile = folder.children.find(f => f instanceof TFile && f.name === 'user.md') as TFile | undefined;
+
         const pattern: Pattern = {
-            id: folder.path,
-            name: folder.name,
-            path: folder.path,
-            type: 'folder'
+            ...metadata,
+            system: systemFile ? await this.vault.cachedRead(systemFile) : undefined,
+            user: userFile ? await this.vault.cachedRead(userFile) : undefined
         };
-    
-        if (systemFile) {
-            pattern.system = await this.vault.cachedRead(systemFile);
-        }
-        if (userFile) {
-            pattern.user = await this.vault.cachedRead(userFile);
-        }
-    
+
         return pattern;
     }
 
-    getPattern(id: string): Pattern | undefined {
+    getPattern(id: string): PatternMetadata | undefined {
         return this.patterns.get(id);
     }
-
-    getAllPatterns(): Pattern[] {
-        return Array.from(this.patterns.values());
-    }
-
-    searchPatterns(query: string): Pattern[] {
+    
+    searchPatterns(query: string): PatternMetadata[] {
         const lowerQuery = query.toLowerCase();
         return this.getAllPatterns().filter(pattern => 
             pattern.name.toLowerCase().includes(lowerQuery)
         );
+    }
+
+    getAllPatterns(): PatternMetadata[] {
+        return Array.from(this.patterns.values());
     }
 
     private calculateHash(content: string): string {
@@ -162,12 +173,13 @@ export class PatternManager {
     }
 
     async executePatternOnSelection(
-        pattern: Pattern,
+        patternId: string,
         editor: Editor,
         mainPlugin: DeepInsightAI,
         contentProcessor: ContentProcessor,
         targetFile?: TAbstractFile
     ): Promise<void> {
+        const pattern = await this.getPatternContent(patternId);
         if (!pattern || !editor) {
             throw new DeepInsightError({
                 type: 'PATTERN_ERROR',

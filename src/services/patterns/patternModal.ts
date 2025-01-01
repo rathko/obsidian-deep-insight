@@ -1,11 +1,11 @@
 import { App, FuzzySuggestModal, FuzzyMatch } from 'obsidian';
-import { Pattern } from './types';
+import { PatternMetadata } from './types';
 
-export class PatternSelectionModal extends FuzzySuggestModal<Pattern> {
+export class PatternSelectionModal extends FuzzySuggestModal<PatternMetadata> {
     constructor(
         app: App,
-        private patterns: Pattern[],
-        private onSelect: (pattern: Pattern) => void
+        private patterns: PatternMetadata[],
+        private onSelect: (pattern: PatternMetadata) => void
     ) {
         super(app);
         this.setPlaceholder('Choose a pattern to apply...');
@@ -13,15 +13,15 @@ export class PatternSelectionModal extends FuzzySuggestModal<Pattern> {
         this.patterns.sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    getItems(): Pattern[] {
+    getItems(): PatternMetadata[] {
         return this.patterns;
     }
 
-    getItemText(pattern: Pattern): string {
+    getItemText(pattern: PatternMetadata): string {
         return this.formatPatternName(pattern.name);
     }
 
-    renderSuggestion(match: FuzzyMatch<Pattern>, el: HTMLElement): void {
+    renderSuggestion(match: FuzzyMatch<PatternMetadata>, el: HTMLElement): void {
         const pattern = match.item;
         el.createEl('div', { text: this.formatPatternName(pattern.name) });
         el.createEl('small', { 
@@ -42,7 +42,7 @@ export class PatternSelectionModal extends FuzzySuggestModal<Pattern> {
             .join(' ');
     }
 
-    onChooseItem(pattern: Pattern): void {
+    onChooseItem(pattern: PatternMetadata): void {
         this.onSelect(pattern);
     }
 }
