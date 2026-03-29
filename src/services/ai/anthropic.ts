@@ -1,7 +1,8 @@
-import { RequestUrlResponse } from 'obsidian';
+import { RequestUrlResponse, requestUrl } from 'obsidian';
 import { AIMessage, AIResponse, AIProviderConfig } from './types';
 import { API_CONSTANTS } from '../../constants';
 import { BaseAIProvider } from './baseProvider';
+import { StreamParser } from './streamParser';
 
 export class AnthropicProvider extends BaseAIProvider {
     initialize(config: AIProviderConfig): void {
@@ -68,6 +69,36 @@ export class AnthropicProvider extends BaseAIProvider {
         } catch {
             return `API request failed with status ${response.status}`;
         }
+    }
+
+    async generateStream(messages: AIMessage[], onChunk: (text: string) => void): Promise<AIResponse> {
+        const systemMessage = messages.find(m => m.role === 'system')?.content || '';
+        const formattedMessages = messages
+            .filter(m => m.role !== 'system')
+            .map(m => ({ role: m.role, content: m.content }));
+
+        const response = await fetch(API_CONSTANTS.anthropic.BASE_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': this.apiKey,
+                'anthropic-version': API_CONSTANTS.anthropic.API_VERSION,
+                'accept': 'text/event-stream'
+            },
+            body: JSON.stringify({
+                model: this.model,
+                max_tokens: this.maxOutputTokens,
+                messages: formattedMessages,
+                system: systemMessage,
+                stream: true
+            })
+        });
+
+        if (!response.ok || !response.body) {
+            throw new Error(`Anthropic streaming request failed with status ${response.status}`);
+        }
+
+        return StreamParser.parseSSE(response.body, onChunk, 'anthropic');
     }
 
     estimateTokens(text: string): number {

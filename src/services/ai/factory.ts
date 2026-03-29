@@ -1,11 +1,15 @@
 import { AIProvider } from './types';
 import { AnthropicProvider } from './anthropic';
 import { OpenAIProvider } from './openai';
+import { OllamaProvider } from './ollama';
+import { ClaudeCodeProvider } from './claudeCode';
 
 export class AIProviderFactory {
     private static providers: Record<string, AIProvider> = {
         anthropic: new AnthropicProvider(),
-        openai: new OpenAIProvider()
+        openai: new OpenAIProvider(),
+        ollama: new OllamaProvider(),
+        'claude-code': new ClaudeCodeProvider()
     };
 
     static getProvider(name: string): AIProvider {

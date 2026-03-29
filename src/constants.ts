@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS: DeepInsightAISettings = {
     maxTokensPerRequest: 90000,
     defaultSystemPrompt: DEFAULT_PROMPTS.system,
     defaultUserPrompt: DEFAULT_PROMPTS.user,
-    retryAttempts: 1,
+    retryAttempts: 2,
     showCostSummary: true,
     includeUserContext: true,
     testMode: {
@@ -36,7 +36,7 @@ export const DEFAULT_SETTINGS: DeepInsightAISettings = {
     }
 };
 
-export const AI_MODELS = {
+export const AI_MODELS: Record<string, Record<string, string>> = {
     anthropic: {
         'claude-3-5-haiku-latest': 'Claude 3.5 Haiku (Affordable)',
         'claude-3-5-sonnet-latest': 'Claude 3.5 Sonnet (Advanced)',
@@ -44,8 +44,14 @@ export const AI_MODELS = {
     openai: {
         'gpt-4o-mini': 'GPT-4o mini (Affordable)',
         'gpt-4o': 'GPT-4o (Advanced)',
+    },
+    ollama: {
+        'llama3': 'Llama 3 (Default)',
+    },
+    'claude-code': {
+        'claude-code': 'Claude Code (via Bridge)',
     }
-} as const;
+};
 
 export const MODEL_CONFIGS: Record<string, ModelConfig> = {
     // Anthropic Models
@@ -85,13 +91,55 @@ export const API_CONSTANTS = {
         REQUEST_API_KEY: 'https://console.anthropic.com/settings/keys',
         API_VERSION: '2023-06-01',
         MAX_OUTPUT_TOKENS: 4000,
-        CHARS_PER_TOKEN: 4
+        CHARS_PER_TOKEN: 4,
+        RATE_LIMITS: {
+            TOKENS_PER_MINUTE: 50000,
+            CHUNK_SAFETY_FACTOR: 10,
+            MIN_REQUEST_INTERVAL: 500,
+            MAX_RETRY_DELAY: 32000,
+            JITTER_MAX: 1000,
+            BASE_DELAY: 1000
+        }
     },
     openai: {
         BASE_URL: 'https://api.openai.com/v1/chat/completions',
         REQUEST_API_KEY: 'https://platform.openai.com/api-keys',
         MAX_OUTPUT_TOKENS: 4096,
-        CHARS_PER_TOKEN: 4
+        CHARS_PER_TOKEN: 4,
+        RATE_LIMITS: {
+            TOKENS_PER_MINUTE: 90000,
+            CHUNK_SAFETY_FACTOR: 10,
+            MIN_REQUEST_INTERVAL: 500,
+            MAX_RETRY_DELAY: 32000,
+            JITTER_MAX: 1000,
+            BASE_DELAY: 1000
+        }
+    },
+    ollama: {
+        BASE_URL: 'http://localhost:11434/api/chat',
+        MAX_OUTPUT_TOKENS: 4096,
+        CHARS_PER_TOKEN: 4,
+        RATE_LIMITS: {
+            TOKENS_PER_MINUTE: 100000,
+            CHUNK_SAFETY_FACTOR: 10,
+            MIN_REQUEST_INTERVAL: 100,
+            MAX_RETRY_DELAY: 16000,
+            JITTER_MAX: 500,
+            BASE_DELAY: 500
+        }
+    },
+    'claude-code': {
+        BASE_URL: 'http://localhost:3456',
+        MAX_OUTPUT_TOKENS: 8192,
+        CHARS_PER_TOKEN: 4,
+        RATE_LIMITS: {
+            TOKENS_PER_MINUTE: 100000,
+            CHUNK_SAFETY_FACTOR: 10,
+            MIN_REQUEST_INTERVAL: 100,
+            MAX_RETRY_DELAY: 16000,
+            JITTER_MAX: 500,
+            BASE_DELAY: 500
+        }
     }
 } as const;
 
@@ -137,7 +185,8 @@ export const ERROR_MESSAGES = {
         NOT_INITIALIZED: 'NetworkManager not initialized',
         NO_CONNECTION: 'No internet connection',
         RATE_LIMIT: (attempts: number, error?: unknown) => 
-            `Rate limit exceeded after ${attempts} attempts. ${error ? `Last error: ${error}` : ''}`
+            `Rate limit exceeded after ${attempts} attempts. ${error ? `Last error: ${error}` : ''}`,
+        UNKNOWN_ERROR: 'Unknown error'
     },
     PROCESSING: {
         RETRY: (attempt: number, maxAttempts: number, seconds: number) => 

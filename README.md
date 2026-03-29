@@ -38,7 +38,7 @@
 
 Transform your Obsidian vault into actionable insights using AI-powered patterns. Deep Insight analyzes your notes to uncover tasks and patterns that align with your goals and values.
 
-- 🤖 Powered by Claude 3.5 and OpenAI GPT-4o AI models (Sonnet, Haiku, GPT-4o and GPT-4o mini)
+- 🤖 Powered by Claude 3.5, OpenAI GPT-4o, Ollama (local), and Claude Code (via bridge)
 - 📝 Analyzes every Markdown file in your vault (you can exclude chosen folders) or selected folders/notes
 - 🎯 Generates prioritized tasks based on note context and your own **core values, goals and beliefs**. 
 - 🧬 Pattern-based analysis using [Fabric](https://github.com/danielmiessler/fabric) patterns
@@ -51,15 +51,34 @@ Transform your Obsidian vault into actionable insights using AI-powered patterns
 ## Setup
 
 1. Install via Obsidian Community Plugins or manually
-2. Get API key from [Anthropic](https://console.anthropic.com/settings/keys) or [OpenAI](https://platform.openai.com/api-keys)
+2. Choose your AI provider:
+   - **Anthropic** — Get API key from [Anthropic Console](https://console.anthropic.com/settings/keys)
+   - **OpenAI** — Get API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+   - **Ollama (Local)** — Install [Ollama](https://ollama.com), no API key needed, zero cost
+   - **Claude Code (Local)** — Uses your existing Claude Pro/Max subscription via a local bridge (see below)
 3. Configure in plugin settings:
-   - Enter API key
+   - Select provider and enter API key (if needed)
    - Choose AI model
    - Set excluded folders
    - Customize prompts
    - Install Fabric patterns
 
 Note: Alternatively, see [docs](./docs) on how to install latest version manually.
+
+### Claude Code Bridge Setup
+
+If you have a Claude Pro or Max subscription, you can use Claude Code as your AI backend at no extra API cost:
+
+1. Install [Bun](https://bun.sh) if you don't have it
+2. Start the bridge server:
+   ```bash
+   cd /path/to/obsidian-deep-insight
+   bun bridge-server.ts
+   ```
+3. In Obsidian: Settings → Deep Insight → Provider → "Claude Code (Local)"
+4. Start chatting — uses your existing subscription
+
+**Trade-offs:** The bridge adds 5-15s latency per message (CLI spawn overhead). For faster responses, use direct API keys or Ollama. The bridge is best for occasional use where you want to avoid extra API costs. See the [architecture docs](docs/) for a full comparison.
 
 ## How to Use
 
@@ -127,6 +146,7 @@ A: Markdown (.md) files only. Other formats are excluded for focused analysis.
 A: On my personal vault (hundreds of notes):
 - ~$0.15 per run using GPT-4o mini
 - ~$5/month for daily reviews
+- **$0/month** with Ollama (local, free) or Claude Code bridge (uses existing subscription)
 - Cost estimates are shown upfront, YMMV
 - If your estimated costs are too high, stop processing anytime by closing Obsidian
 - Reduce costs by excluding folders in settings
@@ -139,10 +159,16 @@ A: Large vaults are processed in smaller batches to:
 Expect a few minutes for larger vaults.
 
 ### Q: Which AI provider should I choose?
-A: Both work well, but OpenAI has stricter quotas. If hitting limits with GPT-4o, try GPT-4o mini or Anthropic.
+A: It depends on your priorities:
+- **Cheapest:** Ollama (free, runs locally) or Claude Code bridge (uses existing subscription)
+- **Fastest:** OpenAI or Anthropic direct API (1-2s per response)
+- **Most private:** Ollama (nothing leaves your machine)
+- **No extra cost:** Claude Code bridge (if you already have Claude Pro/Max)
+
+OpenAI has stricter quotas. If hitting limits with GPT-4o, try GPT-4o mini or Anthropic.
 
 ### Q: Is my data secure?
-A: Yes - notes are transferred securely between your vault and the AI providers (Anthropic/OpenAI). No data is stored elsewhere or used for training without explicit opt-in.
+A: Yes - notes are transferred securely between your vault and the AI providers (Anthropic/OpenAI). No data is stored elsewhere or used for training without explicit opt-in. With Ollama or Claude Code bridge, your data never leaves your machine (except through your existing Claude subscription for the bridge).
 
 Both OpenAI and Anthropic do not use data submitted via API for training, unless user specifically opted in.
 

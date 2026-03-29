@@ -12,12 +12,20 @@ interface QueueItem {
     retries: number;
 }
 
+interface ErrorDetails {
+    statusCode?: number;
+    responseBody?: string;
+    retryAttempt: number;
+    originalError: Error;
+}
+
 export class NetworkManager {
     private static instance: NetworkManager;
     private readonly MIN_REQUEST_INTERVAL = 500;
     private readonly MAX_RETRY_DELAY = 32000;
     private readonly JITTER_MAX = 1000;
     private readonly BASE_DELAY = 1000;
+    private readonly ERROR_NOTICE_DURATION = 10000;
 
     private queue: QueueItem[] = [];
     private isProcessing = false;
@@ -88,7 +96,7 @@ export class NetworkManager {
     }
 
     private async executeWithRetry(item: QueueItem): Promise<RequestUrlResponse> {
-        let lastError: NetworkError = new Error('Unknown error');
+        let errorDetails: ErrorDetails | null = null;
     
         for (let attempt = 1; attempt <= this.settings.retryAttempts; attempt++) {
             try {
@@ -98,6 +106,13 @@ export class NetworkManager {
                     const retryAfter = parseInt(response.headers?.['retry-after'] ?? '0');
                     const waitTime = retryAfter ? retryAfter * 1000 : this.calculateRetryDelay(attempt);
                     
+                    errorDetails = {
+                        statusCode: response.status,
+                        responseBody: await response.text,
+                        retryAttempt: attempt,
+                        originalError: new Error('Rate limit exceeded')
+                    };
+                    
                     this.showRetryNotice(attempt, waitTime);
                     await this.delay(waitTime);
                     continue;
@@ -105,7 +120,16 @@ export class NetworkManager {
                 
                 return response;
             } catch (error) {
-                lastError = error instanceof Error ? error : new Error(String(error));
+                const currentError = error instanceof Error ? error : new Error(String(error));
+                
+                errorDetails = {
+                    retryAttempt: attempt,
+                    originalError: currentError,
+                    ...(error instanceof Response ? {
+                        statusCode: error.status,
+                        responseBody: await error.text()
+                    } : {})
+                };
                 
                 if (attempt === this.settings.retryAttempts) {
                     break;
@@ -116,11 +140,46 @@ export class NetworkManager {
                 await this.delay(retryDelay);
             }
         }
-    
+
+        const errorMessage = this.formatErrorMessage(errorDetails);
+        this.showErrorNotice(errorMessage);
+        
         throw new DeepInsightError({
             type: 'RATE_LIMIT',
-            message: ERROR_MESSAGES.NETWORK.RATE_LIMIT(this.settings.retryAttempts, lastError)
+            message: errorMessage
         });
+    }
+
+    private formatErrorMessage(details: ErrorDetails | null): string {
+        if (!details) {
+            return ERROR_MESSAGES.NETWORK.UNKNOWN_ERROR;
+        }
+
+        // User-friendly error message for the notice
+        const userParts = [
+            `Request failed after ${details.retryAttempt} attempt${details.retryAttempt !== 1 ? 's' : ''}.`
+        ];
+
+        if (details.statusCode === 429) {
+            userParts.push("Rate limit reached. Please try again later.");
+        } else if (details.statusCode) {
+            userParts.push(`Server returned status ${details.statusCode}.`);
+        }
+
+        if (details.responseBody) {
+            const cleanResponse = details.responseBody
+                .replace(/[{}"]/g, '')  // Remove JSON syntax
+                .slice(0, 100);         // Limit length
+            if (cleanResponse) {
+                userParts.push(`Server message: ${cleanResponse}`);
+            }
+        }
+
+        return userParts.join(' ');
+    }
+
+    private showErrorNotice(message: string): void {
+        new Notice(message, this.ERROR_NOTICE_DURATION);
     }
 
     private calculateRetryDelay(retryCount: number): number {

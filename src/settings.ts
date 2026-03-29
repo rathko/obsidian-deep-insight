@@ -121,11 +121,19 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         let modelDropdownComponent: DropdownComponent;
     
         const updateAPIKeyDesc = (provider: AIProvider) => {
+            if (provider === 'ollama') {
+                apiKeySetting.setDesc('No API key needed for Ollama (local). Leave empty.');
+                return;
+            }
+            if (provider === 'claude-code') {
+                apiKeySetting.setDesc('Optional: bridge URL (default http://localhost:3456). Leave empty for default.');
+                return;
+            }
             const fragment = document.createDocumentFragment();
             fragment.appendText('Get your API key from ');
             fragment.createEl('a', {
                 text: provider === 'anthropic' ? 'Anthropic' : 'OpenAI',
-                href: API_CONSTANTS[provider].REQUEST_API_KEY
+                href: API_CONSTANTS[provider as 'anthropic' | 'openai'].REQUEST_API_KEY
             });
             apiKeySetting.setDesc(fragment);
         };
@@ -136,7 +144,9 @@ export class DeepInsightAISettingTab extends PluginSettingTab {
         providerSetting.addDropdown(dropdown => {
             dropdown.addOptions({
                 anthropic: 'Anthropic',
-                openai: 'OpenAI'
+                openai: 'OpenAI',
+                ollama: 'Ollama (Local)',
+                'claude-code': 'Claude Code (Local)'
             });
             dropdown.setValue(this.plugin.settings.provider.type);
             

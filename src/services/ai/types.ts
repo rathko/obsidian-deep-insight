@@ -18,6 +18,7 @@ export interface AIProviderConfig {
 export interface AIProvider {
     initialize(config: AIProviderConfig): void;
     generateResponse(messages: AIMessage[]): Promise<AIResponse>;
+    generateStream?(messages: AIMessage[], onChunk: (text: string) => void): Promise<AIResponse>;
     estimateTokens(text: string): number;
     getCosts(): ModelConfig;
 }
@@ -25,12 +26,6 @@ export interface AIProvider {
 export interface AIUsage {
     inputTokens: number;
     outputTokens: number;
-}
-
-export interface ModelCosts {
-    input: number;
-    output: number;
-    displayName: string;
 }
 
 export interface ModelConfig {

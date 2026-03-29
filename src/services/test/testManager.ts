@@ -31,23 +31,4 @@ export class TestModeManager {
 
         return files;
     }
-
-    applyTokenLimit(content: string, settings: DeepInsightAISettings, charsPerToken: number): string {
-        if (!this.isTestModeEnabled(settings) || !settings.testMode.maxTokens) {
-            return content;
-        }
-
-        const estimatedCurrentTokens = Math.ceil(content.length / charsPerToken);
-        if (estimatedCurrentTokens <= settings.testMode.maxTokens) {
-            return content;
-        }
-
-        const charLimit = settings.testMode.maxTokens * charsPerToken;
-        const truncatedContent = content.slice(0, charLimit);
-        
-        const reduction = Math.round((1 - settings.testMode.maxTokens / estimatedCurrentTokens) * 100);
-        new Notice(`Deep Insight: Content truncated by ${reduction}% for testing`);
-
-        return truncatedContent + '\n\n[Content truncated for testing]';
-    }
 }

@@ -1,12 +1,6 @@
-import { AI_MODELS } from "./constants";
+export type AIProvider = 'anthropic' | 'openai' | 'ollama' | 'claude-code';
 
-export type AIProvider = 'anthropic' | 'openai';
-
-export type AnthropicModel = keyof typeof AI_MODELS.anthropic;
-export type OpenAIModel = keyof typeof AI_MODELS.openai;
-export type AIModel = AnthropicModel | OpenAIModel;
-
-export type ErrorType = 'API' | 'File' | 'Settings' | 'Processing' | 'Network';
+export type AIModel = string;
 
 export interface AIProviderSettings {
     type: AIProvider;

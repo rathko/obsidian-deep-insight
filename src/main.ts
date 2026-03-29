@@ -1,4 +1,4 @@
-import { Plugin, TAbstractFile, MarkdownView, Notice, Editor } from 'obsidian';
+import { Plugin, TAbstractFile, MarkdownView, Notice, Editor, WorkspaceLeaf } from 'obsidian';
 import { DEFAULT_SETTINGS, UI_MESSAGES } from './constants';
 import { CostTracker } from './costTracker';
 import { DeepInsightAISettingTab } from './settings';
@@ -14,8 +14,10 @@ import { InputValidator } from './utils/validation';
 import { PromptManager } from './utils/prompts';
 import { PatternSelectionModal } from './services/patterns/patternModal';
 import { PatternManager } from './services/patterns/patternManager';
-import { Pattern, ProcessingOptions } from './services/patterns/types';
+import { PatternMetadata, ProcessingOptions } from './services/patterns/types';
 import { ContextMenuManager } from './services/patterns/contextMenuManager';
+import { ChatView, VIEW_TYPE_CHAT } from './services/chat/chatView';
+import { ScopeSelectionModal } from './services/content/scopeModal';
 
 export default class DeepInsightAI extends Plugin {
     public provider?: AIProvider;
@@ -26,6 +28,7 @@ export default class DeepInsightAI extends Plugin {
     private patternManager!: PatternManager;
     private contextMenuManager!: ContextMenuManager;
     private lastActiveEditor: Editor | null = null;
+    private statusBarEl: HTMLElement | null = null;
 
     async onload(): Promise<void> {
         this.contextMenuManager = new ContextMenuManager(this);
@@ -36,22 +39,11 @@ export default class DeepInsightAI extends Plugin {
         this.initializeProvider();
     
         this.addCommand({
-            id: 'run-pattern-globally',
-            name: 'Run Pattern on Vault',
-            callback: () => this.handleGlobalPatternCommand(),
-        });
-    
-        this.addCommand({
             id: 'generate-insights',
             name: 'Generate Insights and Tasks from Notes',
             editorCallback: () => this.generateTasks(),
         });
 
-        this.patternManager = PatternManager.getInstance(this.app.vault, {
-            enabled: this.settings.patterns.enabled,
-            patternsPath: this.settings.patterns.folderPath,
-        });
-    
         this.addSettingTab(new DeepInsightAISettingTab(this.app, this));
 
         this.registerEvent(
@@ -68,6 +60,68 @@ export default class DeepInsightAI extends Plugin {
                 this.lastActiveEditor = editor;
             })
         );
+
+        if (this.settings.patterns.enabled) {
+            this.patternManager = PatternManager.getInstance(this.app.vault, {
+                enabled: this.settings.patterns.enabled,
+                patternsPath: this.settings.patterns.folderPath,
+            });
+            if (this.settings.patterns.installed) {
+                await this.patternManager.loadPatterns();
+            }
+        }
+    
+        this.addCommand({
+            id: 'run-pattern-globally',
+            name: 'Run Pattern on Vault',
+            callback: () => this.handleGlobalPatternCommand(),
+        });
+
+        // Chat sidebar view
+        this.registerView(
+            VIEW_TYPE_CHAT,
+            (leaf) => {
+                const view = new ChatView(leaf);
+                view.setProvider(this.provider);
+                view.setSystemPrompt(this.settings.defaultSystemPrompt);
+                view.setStatusCallback((status) => this.updateStatusBar(status));
+                return view;
+            }
+        );
+
+        this.addCommand({
+            id: 'toggle-chat',
+            name: 'Toggle Chat Panel',
+            callback: () => this.toggleChatView(),
+        });
+
+        this.addRibbonIcon('message-square', 'Toggle Deep Insight Chat', () => {
+            this.toggleChatView();
+        });
+
+        // Scope-aware processing command
+        this.addCommand({
+            id: 'generate-with-scope',
+            name: 'Generate Insights (Choose Scope)',
+            editorCallback: (editor: Editor) => {
+                new ScopeSelectionModal(this.app, async (scope) => {
+                    if (scope.type === 'current-note') {
+                        await this.generateTasks();
+                    } else if (scope.type === 'folder' && scope.folderPath) {
+                        const folder = this.app.vault.getAbstractFileByPath(scope.folderPath);
+                        if (folder) {
+                            await this.generateTasksForTarget(editor, folder);
+                        }
+                    } else {
+                        await this.generateTasks();
+                    }
+                }).open();
+            },
+        });
+
+        // Status bar
+        this.statusBarEl = this.addStatusBarItem();
+        this.updateStatusBar('Ready');
     }
     
     async saveSettings(): Promise<void> {
@@ -89,7 +143,8 @@ export default class DeepInsightAI extends Plugin {
             this.contextMenuManager.unregister();
         }
         this.lastActiveEditor = null;
-    }    
+        this.app.workspace.detachLeavesOfType(VIEW_TYPE_CHAT);
+    }
 
     private initializeProvider(): void {
         try {
@@ -299,12 +354,11 @@ export default class DeepInsightAI extends Plugin {
     }    
     
     private async showPatternSelection(file: TAbstractFile): Promise<void> {
-        // Store the current active editor before showing pattern selection
         const currentView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (currentView?.editor) {
             this.lastActiveEditor = currentView.editor;
         }
-
+    
         await this.patternManager.loadPatterns();
         const patterns = this.patternManager.getAllPatterns();
         
@@ -312,23 +366,26 @@ export default class DeepInsightAI extends Plugin {
             new Notice(UI_MESSAGES.NO_PATTERNS_FOUND);
             return;
         }
-
+    
+        // Pattern selection modal now works with PatternMetadata instead of full Pattern
         new PatternSelectionModal(
             this.app,
             patterns,
-            async (pattern: Pattern) => {
+            async (pattern: PatternMetadata) => {
                 await this.runPattern(pattern, file);
             }
         ).open();
     }
 
-    private async runPattern(pattern: Pattern, file: TAbstractFile): Promise<void> {
+    private async runPattern(pattern: PatternMetadata, file: TAbstractFile): Promise<void> {
         const editor = this.validateExecutionPrerequisites();
         if (!editor) {
             return;
         }
     
         try {
+            await this.patternManager.loadPatterns(); // Quick metadata-only rescan
+            
             if (this.costTracker) {
                 this.costTracker.reset();
             }
@@ -343,7 +400,7 @@ export default class DeepInsightAI extends Plugin {
             );
     
             await this.patternManager.executePatternOnSelection(
-                pattern,
+                pattern.id, // Now passing patternId instead of full pattern
                 editor,
                 this,
                 contentProcessor,
@@ -351,6 +408,67 @@ export default class DeepInsightAI extends Plugin {
             );
         } catch (error) {
             ErrorHandler.handle(error);
+        }
+    }
+
+    private async toggleChatView(): Promise<void> {
+        const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CHAT);
+        if (existing.length) {
+            existing[0].detach();
+            return;
+        }
+
+        const leaf = this.app.workspace.getRightLeaf(false);
+        if (leaf) {
+            await leaf.setViewState({ type: VIEW_TYPE_CHAT, active: true });
+            this.app.workspace.revealLeaf(leaf);
+        }
+    }
+
+    private updateStatusBar(status: string): void {
+        if (this.statusBarEl) {
+            this.statusBarEl.setText(`Deep Insight: ${status}`);
+        }
+    }
+
+    private async generateTasksForTarget(editor: Editor, target: TAbstractFile): Promise<void> {
+        if (this.isProcessing) {
+            new Notice(UI_MESSAGES.ALREADY_PROCESSING);
+            return;
+        }
+
+        this.isProcessing = true;
+
+        try {
+            if (this.costTracker) {
+                this.costTracker.reset();
+            }
+
+            const { systemPrompt, userPrompt } = await this.getPrompts();
+            const contentProcessor = new ContentProcessor(
+                this.app.vault,
+                this.settings,
+                TestModeManager.getInstance()
+            );
+
+            const chunks = await contentProcessor.processContent(target);
+            await this.handleCostEstimate(chunks.length);
+
+            const options: ProcessingOptions = {
+                systemPrompt,
+                userPrompt
+            };
+
+            const result = chunks.length === 1
+                ? await this.processChunk(chunks[0].content, options)
+                : await this.processChunks(chunks, options);
+
+            await this.insertContent(editor, result);
+            this.showSuccessMessage();
+        } catch (error) {
+            ErrorHandler.handle(error);
+        } finally {
+            this.isProcessing = false;
         }
     }
 
@@ -367,20 +485,20 @@ export default class DeepInsightAI extends Plugin {
         if (!editor) {
             return;
         }
-
+    
         const patterns = await this.loadAvailablePatterns();
         if (!patterns.length) {
             return;
         }
-
+    
         new PatternSelectionModal(
             this.app,
             patterns,
-            (pattern) => this.executeGlobalPattern(pattern, editor)
+            (pattern: PatternMetadata) => this.executeGlobalPattern(pattern, editor)
         ).open();
     }
 
-    private async loadAvailablePatterns(): Promise<Pattern[]> {
+    private async loadAvailablePatterns(): Promise<PatternMetadata[]> {
         await this.patternManager.loadPatterns();
         const patterns = this.patternManager.getAllPatterns();
         
@@ -391,7 +509,7 @@ export default class DeepInsightAI extends Plugin {
         return patterns;
     }
 
-    private async executeGlobalPattern(pattern: Pattern, editor: Editor): Promise<void> {
+    private async executeGlobalPattern(pattern: PatternMetadata, editor: Editor): Promise<void> {
         const contentProcessor = new ContentProcessor(
             this.app.vault,
             {
@@ -400,9 +518,9 @@ export default class DeepInsightAI extends Plugin {
             },
             TestModeManager.getInstance()
         );
-
+    
         await this.patternManager.executePatternOnSelection(
-            pattern,
+            pattern.id,
             editor,
             this,
             contentProcessor

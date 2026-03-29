@@ -2,6 +2,7 @@ import { RequestUrlResponse } from 'obsidian';
 import { AIMessage, AIResponse, AIProviderConfig } from './types';
 import { API_CONSTANTS } from '../../constants';
 import { BaseAIProvider } from './baseProvider';
+import { StreamParser } from './streamParser';
 
 export class OpenAIProvider extends BaseAIProvider {
 
@@ -52,6 +53,28 @@ export class OpenAIProvider extends BaseAIProvider {
                 outputTokens: data.usage.completion_tokens
             } : undefined
         };
+    }
+
+    async generateStream(messages: AIMessage[], onChunk: (text: string) => void): Promise<AIResponse> {
+        const response = await fetch(API_CONSTANTS.openai.BASE_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${this.apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: this.model,
+                messages: messages,
+                max_tokens: this.maxOutputTokens,
+                stream: true
+            })
+        });
+
+        if (!response.ok || !response.body) {
+            throw new Error(`OpenAI streaming request failed with status ${response.status}`);
+        }
+
+        return StreamParser.parseSSE(response.body, onChunk, 'openai');
     }
 
     estimateTokens(text: string): number {
